@@ -8,6 +8,7 @@ import java.util.List;
  * @param iconUrl  taken from {@code raw_icon_url} (a PNG). The {@code icon_url} field is a WebP,
  *                 which {@code NativeImage.read} cannot decode.
  * @param body     full README markdown; empty for search hits, filled by the details lookup
+ * @param links    author-provided links (source, issues, wiki, Discord, donations)
  */
 public record ModrinthProject(
 	String projectId,
@@ -20,7 +21,8 @@ public record ModrinthProject(
 	String clientSide,
 	String serverSide,
 	String sourceUrl,
-	String body
+	String body,
+	List<ProjectLink> links
 ) {
 	public String pageUrl() {
 		return "https://modrinth.com/mod/" + this.slug;

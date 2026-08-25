@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.zymekoh.optimatch.OptiMatchClient;
+import dev.zymekoh.optimatch.ui.LinkIcons;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -277,7 +278,8 @@ public final class ModrinthClient {
 						string(hit, "client_side"),
 						string(hit, "server_side"),
 						"",
-						""
+						"",
+						List.of()
 					));
 				}
 				return List.copyOf(projects);
@@ -333,7 +335,8 @@ public final class ModrinthClient {
 						string(project, "client_side"),
 						string(project, "server_side"),
 						string(project, "source_url"),
-						""
+						"",
+						readLinks(project)
 					);
 					byId.put(converted.projectId(), converted);
 					byId.put(converted.slug(), converted);
@@ -363,7 +366,8 @@ public final class ModrinthClient {
 					string(project, "client_side"),
 					string(project, "server_side"),
 					string(project, "source_url"),
-					string(project, "body")
+					string(project, "body"),
+					readLinks(project)
 				);
 			} catch (Exception exception) {
 				OptiMatchClient.LOGGER.debug("Modrinth details failed for {}", slug, exception);
@@ -402,6 +406,37 @@ public final class ModrinthClient {
 			throw new IllegalStateException("Modrinth responded " + response.statusCode());
 		}
 		return JsonParser.parseString(response.body());
+	}
+
+	/**
+	 * Collects every author link a project exposes. Modrinth keeps the well-known ones as their own
+	 * fields and the rest under {@code donation_urls}, whose {@code id} names the platform.
+	 */
+	private static List<ProjectLink> readLinks(JsonObject project) {
+		List<ProjectLink> links = new ArrayList<>();
+
+		addLink(links, ProjectLink.of(LinkIcons.Kind.SOURCE, "Codigo fuente", string(project, "source_url")));
+		addLink(links, ProjectLink.of(LinkIcons.Kind.ISSUES, "Reportar un fallo", string(project, "issues_url")));
+		addLink(links, ProjectLink.of(LinkIcons.Kind.WIKI, "Documentacion", string(project, "wiki_url")));
+		addLink(links, ProjectLink.of(LinkIcons.Kind.DISCORD, "Discord", string(project, "discord_url")));
+
+		JsonArray donations = project.getAsJsonArray("donation_urls");
+		if (donations != null) {
+			for (JsonElement element : donations) {
+				JsonObject donation = element.getAsJsonObject();
+				LinkIcons.Kind kind = LinkIcons.Kind.fromDonationId(string(donation, "id"));
+				String platform = string(donation, "platform");
+				addLink(links, ProjectLink.of(kind, platform.isBlank() ? kind.label() : platform,
+					string(donation, "url")));
+			}
+		}
+		return List.copyOf(links);
+	}
+
+	private static void addLink(List<ProjectLink> links, ProjectLink link) {
+		if (link != null) {
+			links.add(link);
+		}
 	}
 
 	private static String string(JsonObject object, String key) {

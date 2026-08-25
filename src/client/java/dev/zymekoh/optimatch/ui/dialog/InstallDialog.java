@@ -3,18 +3,22 @@ package dev.zymekoh.optimatch.ui.dialog;
 import dev.zymekoh.optimatch.OptiMatchClient;
 import dev.zymekoh.optimatch.catalog.ModrinthClient;
 import dev.zymekoh.optimatch.catalog.ModrinthProject;
+import dev.zymekoh.optimatch.catalog.ProjectLink;
 import dev.zymekoh.optimatch.catalog.ModrinthVersion;
 import dev.zymekoh.optimatch.install.InstallPlan;
 import dev.zymekoh.optimatch.install.ModInstaller;
 import dev.zymekoh.optimatch.ui.Draw;
 import dev.zymekoh.optimatch.ui.MarkdownView;
 import dev.zymekoh.optimatch.ui.Anim;
+import dev.zymekoh.optimatch.ui.LinkIcons;
 import dev.zymekoh.optimatch.ui.Mascot;
 import dev.zymekoh.optimatch.ui.ModIcons;
 import dev.zymekoh.optimatch.ui.Tooltip;
 import dev.zymekoh.optimatch.ui.Theme;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -53,6 +57,15 @@ public final class InstallDialog implements Dialog {
 	private int height;
 	private int docTop;
 	private int docBottom;
+	private int docWidth;
+	private int linksX;
+	private int linksWidth;
+
+	/** Clickable rectangles for the author links, rebuilt each frame. */
+	private final List<LinkHotspot> linkHotspots = new ArrayList<>();
+
+	private record LinkHotspot(int x, int y, int width, int height, ProjectLink link) {
+	}
 	private int buttonRowY;
 	private int buttonWidth;
 	private int buttonHeight;
@@ -93,6 +106,12 @@ public final class InstallDialog implements Dialog {
 
 		this.docTop = this.y + 78;
 		this.docBottom = this.buttonRowY - 8;
+
+		// Modrinth-style split: the write-up on the left, the author's links down the right edge.
+		boolean roomForSidebar = this.width >= 380;
+		this.linksWidth = roomForSidebar ? Math.min(150, Math.round(this.width * 0.30F)) : 0;
+		this.linksX = this.x + this.width - this.linksWidth - 10;
+		this.docWidth = this.width - 24 - (roomForSidebar ? this.linksWidth + 10 : 0);
 	}
 
 	@Override
@@ -108,7 +127,7 @@ public final class InstallDialog implements Dialog {
 		switch (this.state) {
 			case LOADING -> this.renderCentered(graphics, font, "Consultando Modrinth...", now, opacity);
 			case BLOCKED -> this.renderBlocked(graphics, font, now, opacity);
-			case READY -> this.renderDocumentation(graphics, font, opacity);
+			case READY -> this.renderDocumentation(graphics, font, mouseX, mouseY, opacity);
 			case INSTALLING, FINISHED -> this.renderProgress(graphics, font, opacity);
 		}
 
@@ -206,11 +225,13 @@ public final class InstallDialog implements Dialog {
 			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 	}
 
-	private void renderDocumentation(GuiGraphicsExtractor graphics, Font font, float opacity) {
-		int textX = this.x + 12;
-		int maxWidth = this.width - 24;
+	private void renderDocumentation(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY, float opacity) {
+		this.renderLinks(graphics, font, mouseX, mouseY, opacity);
 
-		graphics.enableScissor(this.x + 2, this.docTop, this.x + this.width - 2, this.docBottom);
+		int textX = this.x + 12;
+		int maxWidth = this.docWidth;
+
+		graphics.enableScissor(this.x + 2, this.docTop, this.x + 12 + this.docWidth, this.docBottom);
 		int cursorY = this.docTop - this.scroll;
 
 		cursorY = Draw.sectionHeader(graphics, font, "Se descargara", textX, cursorY, maxWidth,
@@ -221,7 +242,7 @@ public final class InstallDialog implements Dialog {
 					Theme.withAlpha(Theme.TEXT_MUTED, opacity), false);
 				String size = file.sizeLabel();
 				if (!size.isEmpty()) {
-					graphics.text(font, size, this.x + this.width - 12 - font.width(size), cursorY,
+					graphics.text(font, size, textX + maxWidth - font.width(size), cursorY,
 						Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 				}
 				cursorY += 11;
@@ -251,6 +272,54 @@ public final class InstallDialog implements Dialog {
 		int content = cursorY + this.scroll - this.docTop;
 		this.maxScroll = Math.max(0, content - (this.docBottom - this.docTop) + 10);
 		this.scroll = Mth.clamp(this.scroll, 0, this.maxScroll);
+	}
+
+	/**
+	 * The author's own links, mirroring how Modrinth presents them. Donations are grouped under
+	 * their own heading so supporting the author reads as a separate choice from getting help.
+	 */
+	private void renderLinks(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY, float opacity) {
+		this.linkHotspots.clear();
+		if (this.linksWidth <= 0 || this.project == null || this.project.links().isEmpty()) {
+			return;
+		}
+
+		int cursorY = this.docTop;
+		graphics.fill(this.linksX - 6, this.docTop, this.linksX - 5, this.docBottom,
+			Theme.withAlpha(Theme.BORDER_SOFT, opacity * 0.7F));
+
+		cursorY = Draw.sectionHeader(graphics, font, "Enlaces", this.linksX, cursorY, this.linksWidth,
+			Theme.ACCENT_BRIGHT, opacity);
+
+		boolean donationHeadingDrawn = false;
+		for (ProjectLink link : this.project.links()) {
+			if (cursorY > this.docBottom - 12) {
+				break;
+			}
+			if (link.isDonation() && !donationHeadingDrawn) {
+				donationHeadingDrawn = true;
+				cursorY += 4;
+				cursorY = Draw.sectionHeader(graphics, font, "Apoyar al autor", this.linksX, cursorY,
+					this.linksWidth, Theme.WARN, opacity);
+			}
+
+			int rowHeight = 14;
+			boolean hovered = Draw.inside(mouseX, mouseY, this.linksX, cursorY, this.linksWidth, rowHeight);
+			if (hovered) {
+				Draw.roundedRect(graphics, this.linksX - 2, cursorY - 1, this.linksWidth + 4, rowHeight, 3,
+					Theme.withAlpha(Theme.PANEL_HOVER, opacity));
+				// The real destination, so a friendly label never hides where the click goes.
+				Tooltip.request(link.label(), "Abre " + link.host() + " en tu navegador.", mouseX, mouseY);
+			}
+
+			LinkIcons.draw(graphics, link.kind(), this.linksX + 1, cursorY + 1, 10, opacity);
+			Draw.clippedText(graphics, font, link.label(), this.linksX + 15, cursorY + 2,
+				this.linksWidth - 18,
+				Theme.withAlpha(hovered ? Theme.TEXT : Theme.TEXT_MUTED, opacity), false);
+
+			this.linkHotspots.add(new LinkHotspot(this.linksX, cursorY, this.linksWidth, rowHeight, link));
+			cursorY += rowHeight;
+		}
 	}
 
 	private void renderProgress(GuiGraphicsExtractor graphics, Font font, float opacity) {
@@ -383,6 +452,13 @@ public final class InstallDialog implements Dialog {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		for (LinkHotspot hotspot : this.linkHotspots) {
+			if (Draw.inside(mouseX, mouseY, hotspot.x(), hotspot.y(), hotspot.width(), hotspot.height())) {
+				openUri(hotspot.link().url());
+				return true;
+			}
+		}
+
 		int linkWidth = 90;
 		if (Draw.inside(mouseX, mouseY, this.x + 12, this.buttonRowY, linkWidth, this.buttonHeight)) {
 			openUri(this.project != null ? this.project.pageUrl() : "https://modrinth.com/mod/" + this.slug);
