@@ -64,6 +64,31 @@ public final class ClassGlossary {
 			"Gestiona las particulas del mundo.");
 		CLASSES.put("net/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher",
 			"Dibuja cofres, carteles y demas entidades de bloque.");
+		CLASSES.put("net/minecraft/client/renderer/RenderBuffers",
+			"Reserva los buffers de vertices con los que se dibuja el mundo. Su constructor recibe "
+				+ "maxSectionBuilders, el numero de hilos que construyen geometria de chunks, y por eso "
+				+ "los mods que reescriben el renderizado suelen reclamarlo a la vez.");
+		CLASSES.put("net/minecraft/client/renderer/chunk/SectionRenderDispatcher",
+			"Reparte entre hilos la construccion de la geometria de cada chunk.");
+		CLASSES.put("net/minecraft/client/renderer/culling/Frustum",
+			"Decide que hay dentro del campo de vision. Territorio de los mods de culling.");
+		CLASSES.put("net/minecraft/client/renderer/RenderStateShard",
+			"Piezas de estado de OpenGL reutilizables entre pasadas de dibujado.");
+		CLASSES.put("net/minecraft/client/gui/components/AbstractWidget",
+			"Base de botones, deslizadores y campos de texto.");
+		CLASSES.put("net/minecraft/client/player/LocalPlayer",
+			"Tu jugador en el cliente: entrada, prediccion de movimiento y sincronizacion con el servidor. "
+				+ "Muy disputada por mods de PvP.");
+		CLASSES.put("net/minecraft/client/Options",
+			"Los ajustes del juego. Los mods que anaden opciones la tocan.");
+		CLASSES.put("net/minecraft/client/Timer",
+			"Convierte tiempo real en ticks. Tocarla afecta al ritmo de todo el juego.");
+		CLASSES.put("net/minecraft/world/item/ItemStack",
+			"Una pila de objetos: cantidad, componentes y durabilidad.");
+		CLASSES.put("net/minecraft/client/renderer/texture/TextureAtlas",
+			"El atlas donde se empaquetan las texturas de bloques y objetos.");
+		CLASSES.put("net/minecraft/client/sounds/SoundEngine",
+			"Reproduce y mezcla el sonido del juego.");
 
 		// Methods worth calling out by name.
 		METHODS.put("onScroll", "Rueda del raton. Mods de zoom, de scroll de hotbar y de inventario compiten aqui.");
@@ -73,6 +98,13 @@ public final class ClassGlossary {
 		METHODS.put("init", "Construye una pantalla o subsistema al abrirse.");
 		METHODS.put("<init>", "El constructor. Dos mods modificando la construccion del mismo objeto es delicado.");
 		METHODS.put("close", "Libera recursos al cerrar.");
+		METHODS.put("extractRenderState", "Recoge el estado a dibujar de una pantalla en 26.1. "
+			+ "Sustituye al antiguo render y es donde trabajan los mods de interfaz.");
+		METHODS.put("turnPlayer", "Aplica el giro de camara a partir del delta del raton.");
+		METHODS.put("handleAccumulatedMovement", "Vuelca el movimiento de raton acumulado en el jugador.");
+		METHODS.put("shouldRender", "Decide si algo se dibuja. Los mods de culling viven aqui.");
+		METHODS.put("setupRender", "Prepara el pase de render de un fotograma.");
+		METHODS.put("renderLevel", "Dibuja el mundo entero. Es el metodo mas caro del juego.");
 	}
 
 	private ClassGlossary() {
@@ -130,6 +162,41 @@ public final class ClassGlossary {
 			return "Cliente";
 		}
 		return "Motor del juego";
+	}
+
+	/**
+	 * A guess at what a method does from its name alone.
+	 *
+	 * <p>Worth doing because 26.1 ships unobfuscated: these are Mojang's own names, chosen to be
+	 * descriptive, not machine-generated ones. Returns null when the name says nothing useful.
+	 */
+	public static String inferFromMethodName(String methodName) {
+		if (methodName == null || methodName.isBlank()) {
+			return null;
+		}
+		String name = methodName.toLowerCase(java.util.Locale.ROOT);
+		if (name.startsWith("should") || name.startsWith("is") || name.startsWith("can") || name.startsWith("has")) {
+			return "Devuelve una decision. Cambiarla altera cuando ocurre algo, no como ocurre.";
+		}
+		if (name.startsWith("get")) {
+			return "Lee un valor. Interceptarlo cambia lo que ve el resto del juego.";
+		}
+		if (name.startsWith("set")) {
+			return "Escribe un valor.";
+		}
+		if (name.startsWith("on") || name.startsWith("handle")) {
+			return "Responde a un evento. Suele ser un buen punto de enganche y varios mods pueden convivir.";
+		}
+		if (name.startsWith("render") || name.startsWith("draw") || name.startsWith("blit")) {
+			return "Dibuja algo. Solaparse aqui afecta a lo que se ve y al rendimiento.";
+		}
+		if (name.startsWith("create") || name.startsWith("build") || name.startsWith("make")) {
+			return "Construye un objeto. Reemplazarlo cambia el objeto para todo el juego.";
+		}
+		if (name.startsWith("update") || name.startsWith("refresh")) {
+			return "Actualiza un estado ya existente.";
+		}
+		return null;
 	}
 
 	/** Best available explanation: the curated one, else a sentence built from the package. */

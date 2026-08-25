@@ -15,11 +15,15 @@ import org.objectweb.asm.tree.MethodNode;
  * Reads the real Minecraft class a mixin targets, so a conflict can be explained with facts instead
  * of guesses.
  *
- * <p>A note on sourcing: Mojang publishes <em>obfuscation maps</em>, not prose documentation. There
- * is no official text describing what {@code MouseHandler.onScroll} does. What the official mappings
- * give us are the real names, and the compiled class gives the exact signature, access flags and
- * whether the method exists at all. Everything reported here comes from that bytecode — the only
- * authoritative source — with {@link ClassGlossary} adding plain-language context on top.
+ * <p>A note on sourcing. Minecraft 26.1 was the first release shipped <em>unobfuscated</em>, which
+ * changed what is available here: the jar carries Mojang's own class, method and — via the
+ * {@code MethodParameters} attribute — parameter names. So a signature can be reported as
+ * {@code onScroll(long handle, double xoffset, double yoffset)} rather than bare types.
+ *
+ * <p>What the jar still does not carry is prose. Mojang publishes no behaviour documentation, Yarn
+ * stopped at 26.1 because deobfuscation became unnecessary, and Parchment — the community project
+ * that adds javadocs on top of Mojmap — only goes up to 1.21.x. So the exact facts come from the
+ * bytecode, and {@link ClassGlossary} supplies the explanation.
  */
 public final class TargetInspector {
 	private TargetInspector() {
@@ -40,12 +44,32 @@ public final class TargetInspector {
 		List<String> parameters,
 		String returnType,
 		String access,
-		boolean exists
+		boolean exists,
+		String superClass,
+		List<String> interfaces
 	) {
-		/** Readable signature, e.g. {@code private void onScroll(long, double, double)}. */
+		/**
+		 * Readable signature. Because 26.1 ships parameter names, this reads as
+		 * {@code private void onScroll(long handle, double xoffset, double yoffset)}.
+		 */
 		public String signature() {
 			return (this.access.isBlank() ? "" : this.access + " ")
 				+ this.returnType + " " + this.name + "(" + String.join(", ", this.parameters) + ")";
+		}
+
+		/** What the owning class extends and implements, for context on where the method lives. */
+		public String hierarchy() {
+			StringBuilder text = new StringBuilder();
+			if (this.superClass != null && !this.superClass.isBlank() && !this.superClass.equals("Object")) {
+				text.append("extiende ").append(this.superClass);
+			}
+			if (!this.interfaces.isEmpty()) {
+				if (text.length() > 0) {
+					text.append(", ");
+				}
+				text.append("implementa ").append(String.join(", ", this.interfaces));
+			}
+			return text.toString();
 		}
 	}
 
@@ -64,16 +88,29 @@ public final class TargetInspector {
 			}
 
 			ClassNode node = new ClassNode();
-			new ClassReader(stream).accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+			// SKIP_DEBUG is deliberately NOT set: it would discard the MethodParameters attribute
+			// that carries Mojang's real parameter names in the unobfuscated 26.1 jars.
+			new ClassReader(stream).accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES);
+
+			String superName = node.superName == null ? "" : shortInternal(node.superName);
+			List<String> interfaces = new ArrayList<>();
+			if (node.interfaces != null) {
+				for (String each : node.interfaces) {
+					interfaces.add(shortInternal(each));
+				}
+			}
 
 			if (node.methods != null) {
 				for (MethodNode method : node.methods) {
 					if (!method.name.equals(methodName)) {
 						continue;
 					}
+					Type[] argumentTypes = Type.getArgumentTypes(method.desc);
 					List<String> parameters = new ArrayList<>();
-					for (Type argument : Type.getArgumentTypes(method.desc)) {
-						parameters.add(simpleName(argument));
+					for (int index = 0; index < argumentTypes.length; index++) {
+						String typeName = simpleName(argumentTypes[index]);
+						String parameterName = parameterName(method, index);
+						parameters.add(parameterName == null ? typeName : typeName + " " + parameterName);
 					}
 					return new MethodInfo(
 						internalName.replace('/', '.'),
@@ -82,7 +119,9 @@ public final class TargetInspector {
 						List.copyOf(parameters),
 						simpleName(Type.getReturnType(method.desc)),
 						describeAccess(method.access),
-						true
+						true,
+						superName,
+						List.copyOf(interfaces)
 					);
 				}
 			}
@@ -117,7 +156,22 @@ public final class TargetInspector {
 	}
 
 	private static MethodInfo missing(String internalName, String methodName) {
-		return new MethodInfo(internalName.replace('/', '.'), methodName, "", List.of(), "?", "", false);
+		return new MethodInfo(internalName.replace('/', '.'), methodName, "", List.of(), "?", "", false,
+			"", List.of());
+	}
+
+	/** Mojang's own parameter name from the {@code MethodParameters} attribute, or null. */
+	private static String parameterName(MethodNode method, int index) {
+		if (method.parameters == null || index >= method.parameters.size()) {
+			return null;
+		}
+		String name = method.parameters.get(index).name;
+		return name == null || name.isBlank() ? null : name;
+	}
+
+	private static String shortInternal(String internalName) {
+		int lastSlash = internalName.lastIndexOf('/');
+		return lastSlash >= 0 ? internalName.substring(lastSlash + 1) : internalName;
 	}
 
 	/** Short type name: {@code net.minecraft.client.Minecraft} becomes {@code Minecraft}. */

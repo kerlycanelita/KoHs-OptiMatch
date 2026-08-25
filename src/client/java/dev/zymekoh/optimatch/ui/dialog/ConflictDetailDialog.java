@@ -151,6 +151,12 @@ public final class ConflictDetailDialog implements Dialog {
 			Draw.clippedText(graphics, font, "descriptor JVM: " + this.target.descriptor(), textX, cursorY,
 				maxWidth, Theme.withAlpha(Theme.TEXT_DIM, opacity * 0.8F), false);
 			cursorY += 11;
+			// 26.1 ships unobfuscated, so the class hierarchy is real information rather than noise.
+			String hierarchy = this.target.hierarchy();
+			if (!hierarchy.isBlank()) {
+				cursorY = Draw.wrappedText(graphics, font, "La clase " + hierarchy, textX, cursorY,
+					maxWidth, 2, Theme.TEXT_DIM, opacity);
+			}
 			if (this.overloads.size() > 1) {
 				Draw.clippedText(graphics, font,
 					this.overloads.size() + " sobrecargas con ese nombre en la clase",
@@ -169,6 +175,10 @@ public final class ConflictDetailDialog implements Dialog {
 		cursorY = Draw.wrappedText(graphics, font, ClassGlossary.explain(this.conflict.targetClass()),
 			textX, cursorY, maxWidth, 4, Theme.TEXT_MUTED, opacity);
 		String methodNote = ClassGlossary.describeMethod(this.conflict.plainMethodName());
+		if (methodNote == null) {
+			// Mojang's names are descriptive now that the jar is unobfuscated, so inferring is useful.
+			methodNote = ClassGlossary.inferFromMethodName(this.conflict.plainMethodName());
+		}
 		if (methodNote != null) {
 			cursorY = Draw.wrappedText(graphics, font, methodNote, textX, cursorY, maxWidth, 3,
 				Theme.TEXT_DIM, opacity);
