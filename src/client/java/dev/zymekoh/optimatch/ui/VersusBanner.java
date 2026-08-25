@@ -81,23 +81,40 @@ public final class VersusBanner {
 			return;
 		}
 
-		int iconX = leftSide ? columnStart : columnEnd - iconSize;
-		ModIcons.draw(graphics, font, contender.modId(), contender.displayName(),
-			iconX, iconY, iconSize, Theme.ACCENT, opacity);
-		Draw.outline(graphics, iconX - 1, iconY - 1, iconSize + 2, iconSize + 2,
-			Theme.withAlpha(leftSide ? 0xFFFF9EB5 : 0xFF9EC6FF, opacity));
+		String name = contender.displayName();
+		String kind = contender.kind().label();
+		String priority = "prio " + contender.priority();
 
-		int textX = leftSide ? iconX + iconSize + 6 : columnStart;
-		int textWidth = leftSide ? columnEnd - textX : iconX - 6 - columnStart;
+		// Icon and text travel together as one block, so the portrait never ends up stranded at the
+		// far edge with its own label sitting way over by the VS.
+		int available = columnWidth - iconSize - 6;
+		int natural = Math.max(font.width(name), Math.max(font.width(kind), font.width(priority)));
+		int textWidth = Math.max(0, Math.min(natural, available));
 		if (textWidth <= 8) {
+			// No room for a label: centre the portrait in its column instead.
+			int iconOnly = columnStart + (columnWidth - iconSize) / 2;
+			ModIcons.draw(graphics, font, contender.modId(), name, iconOnly, iconY, iconSize,
+				Theme.ACCENT, opacity);
 			return;
 		}
 
-		Draw.clippedText(graphics, font, contender.displayName(), textX, iconY + 3, textWidth,
+		int blockWidth = iconSize + 6 + textWidth;
+		// Left block hugs the outer edge; right block hugs its own outer edge too, so both sit
+		// against the frame and read as two corners rather than drifting toward the middle.
+		int blockX = leftSide ? columnStart : columnEnd - blockWidth;
+
+		int iconX = leftSide ? blockX : blockX + textWidth + 6;
+		int textX = leftSide ? blockX + iconSize + 6 : blockX;
+
+		ModIcons.draw(graphics, font, contender.modId(), name, iconX, iconY, iconSize, Theme.ACCENT, opacity);
+		Draw.outline(graphics, iconX - 1, iconY - 1, iconSize + 2, iconSize + 2,
+			Theme.withAlpha(leftSide ? 0xFFFF9EB5 : 0xFF9EC6FF, opacity));
+
+		Draw.clippedText(graphics, font, name, textX, iconY + 3, textWidth,
 			Theme.withAlpha(Theme.TEXT, opacity), false);
-		Draw.clippedText(graphics, font, contender.kind().label(), textX, iconY + 13, textWidth,
+		Draw.clippedText(graphics, font, kind, textX, iconY + 13, textWidth,
 			Theme.withAlpha(Theme.WARN, opacity), false);
-		Draw.clippedText(graphics, font, "prio " + contender.priority(), textX, iconY + 22, textWidth,
+		Draw.clippedText(graphics, font, priority, textX, iconY + 22, textWidth,
 			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 	}
 

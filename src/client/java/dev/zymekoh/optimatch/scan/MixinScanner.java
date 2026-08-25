@@ -148,9 +148,11 @@ public final class MixinScanner {
 					continue;
 				}
 
+				String[] site = readInjectionSite(annotation);
 				for (String selector : readMethodSelectors(annotation, method, kind)) {
 					for (String targetClass : targetClasses) {
-						out.add(new MixinTarget(mod.id(), node.name, targetClass, selector, kind, priority));
+						out.add(new MixinTarget(mod.id(), node.name, targetClass, selector, kind, priority,
+							site[0], site[1]));
 					}
 				}
 			}
@@ -204,6 +206,36 @@ public final class MixinScanner {
 		}
 
 		return selectors.isEmpty() ? List.of(method.name) : selectors;
+	}
+
+	/**
+	 * Reads the {@code @At} attached to an injection: its kind and the instruction it targets.
+	 *
+	 * <p>Without this, every {@code @Redirect} in a method looks like it fights every other one, when
+	 * in practice they usually redirect different calls and coexist perfectly.
+	 *
+	 * @return {@code [value, target]}, either possibly empty
+	 */
+	private static String[] readInjectionSite(AnnotationNode annotation) {
+		Object raw = annotationValue(annotation, "at");
+
+		AnnotationNode at = null;
+		if (raw instanceof AnnotationNode single) {
+			at = single;
+		} else if (raw instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof AnnotationNode first) {
+			// @Inject takes an array of @At; the first is enough to tell the sites apart.
+			at = first;
+		}
+		if (at == null) {
+			return new String[]{"", ""};
+		}
+
+		Object value = annotationValue(at, "value");
+		Object target = annotationValue(at, "target");
+		return new String[]{
+			value instanceof String text ? text : "",
+			target instanceof String text ? text : ""
+		};
 	}
 
 	private static AnnotationNode findAnnotation(List<AnnotationNode> annotations, String descriptor) {

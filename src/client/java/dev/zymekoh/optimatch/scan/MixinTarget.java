@@ -10,6 +10,8 @@ package dev.zymekoh.optimatch.scan;
  * @param targetMethod the method selector as written in the annotation, or the overwritten name
  * @param kind        which annotation was used
  * @param priority    the effective mixin priority; higher wins when two mixins collide
+ * @param atValue     the {@code @At} kind, e.g. {@code INVOKE}, {@code HEAD}, {@code RETURN}
+ * @param atTarget    the instruction {@code @At} points at; empty when unspecified
  */
 public record MixinTarget(
 	String modId,
@@ -17,8 +19,28 @@ public record MixinTarget(
 	String targetClass,
 	String targetMethod,
 	Kind kind,
-	int priority
+	int priority,
+	String atValue,
+	String atTarget
 ) {
+	/**
+	 * Where inside the method this injection lands.
+	 *
+	 * <p>Decisive for accuracy: two {@code @Redirect}s in the same method do <em>not</em> conflict
+	 * unless they claim the same instruction. Ignoring this reports collisions that do not exist.
+	 */
+	public String site() {
+		if (!this.atTarget.isBlank()) {
+			return this.atValue + ":" + this.atTarget;
+		}
+		return this.atValue.isBlank() ? "?" : this.atValue;
+	}
+
+	/** True when the injection point is known well enough to compare it against another. */
+	public boolean hasKnownSite() {
+		return !this.atTarget.isBlank();
+	}
+
 	/**
 	 * Injection flavour, ordered roughly by how aggressively it claims the target. Anything at
 	 * {@link #EXCLUSIVE} severity cannot share a target with another mod without one of them losing.

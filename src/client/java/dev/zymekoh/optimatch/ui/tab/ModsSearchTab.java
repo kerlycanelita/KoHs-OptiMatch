@@ -2,6 +2,7 @@ package dev.zymekoh.optimatch.ui.tab;
 
 import dev.zymekoh.optimatch.catalog.ModrinthClient;
 import dev.zymekoh.optimatch.catalog.ModrinthProject;
+import dev.zymekoh.optimatch.install.InstalledCheck;
 import dev.zymekoh.optimatch.ui.Breakpoint;
 import dev.zymekoh.optimatch.ui.Draw;
 import dev.zymekoh.optimatch.ui.Mascot;

@@ -8,6 +8,7 @@ import dev.zymekoh.optimatch.catalog.Preset;
 import dev.zymekoh.optimatch.catalog.PresetBuilder;
 import dev.zymekoh.optimatch.catalog.Recommendation;
 import dev.zymekoh.optimatch.hardware.HardwareProfile;
+import dev.zymekoh.optimatch.install.InstalledCheck;
 import dev.zymekoh.optimatch.hardware.HardwareScanner;
 import dev.zymekoh.optimatch.scan.InstalledMod;
 import dev.zymekoh.optimatch.scan.ModScanner;
@@ -434,15 +435,31 @@ public final class ForYouTab implements OptiTab {
 		if (offerInstall) {
 			int buttonY = y + 2;
 			int buttonHeight = 16;
-			boolean hovered = Draw.inside(mouseX, mouseY, installX, buttonY, installWidth, buttonHeight);
-			Draw.roundedRect(graphics, installX, buttonY, installWidth, buttonHeight, 3,
-				Theme.withAlpha(hovered ? Theme.ACCENT_BRIGHT : Theme.ACCENT, opacity));
-			Draw.roundedRect(graphics, installX + 1, buttonY + 1, installWidth - 2, buttonHeight - 2, 2,
-				Theme.withAlpha(hovered ? Theme.PANEL_HOVER : Theme.PANEL, opacity));
-			graphics.centeredText(font, "Instalar", installX + installWidth / 2, buttonY + 4,
-				Theme.withAlpha(Theme.TEXT, opacity));
+			// A mod downloaded earlier in this session is not installable again until a restart.
+			InstalledCheck.State already = InstalledCheck.stateOf(entry.slug(), entry.modId());
+			boolean hovered = already == null
+				&& Draw.inside(mouseX, mouseY, installX, buttonY, installWidth, buttonHeight);
+			float buttonOpacity = already != null ? opacity * 0.45F : opacity;
 
-			this.hotspots.add(new Hotspot(installX, buttonY, installWidth, buttonHeight, entry));
+			Draw.roundedRect(graphics, installX, buttonY, installWidth, buttonHeight, 3,
+				Theme.withAlpha(already != null ? Theme.BORDER_SOFT
+					: hovered ? Theme.ACCENT_BRIGHT : Theme.ACCENT, buttonOpacity));
+			Draw.roundedRect(graphics, installX + 1, buttonY + 1, installWidth - 2, buttonHeight - 2, 2,
+				Theme.withAlpha(hovered ? Theme.PANEL_HOVER : Theme.PANEL, buttonOpacity));
+			graphics.centeredText(font,
+				font.plainSubstrByWidth(already != null ? InstalledCheck.label(already) : "Instalar",
+					installWidth - 4),
+				installX + installWidth / 2, buttonY + 4,
+				Theme.withAlpha(already != null ? Theme.TEXT_DIM : Theme.TEXT, opacity));
+
+			if (already != null) {
+				if (Draw.inside(mouseX, mouseY, installX, buttonY, installWidth, buttonHeight)) {
+					Tooltip.request(InstalledCheck.label(already), InstalledCheck.explanation(already),
+						mouseX, mouseY);
+				}
+			} else {
+				this.hotspots.add(new Hotspot(installX, buttonY, installWidth, buttonHeight, entry));
+			}
 		}
 
 		return y + rowHeight;

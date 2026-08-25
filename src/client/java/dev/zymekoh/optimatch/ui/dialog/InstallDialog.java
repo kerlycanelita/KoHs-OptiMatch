@@ -6,6 +6,7 @@ import dev.zymekoh.optimatch.catalog.ModrinthProject;
 import dev.zymekoh.optimatch.catalog.ProjectLink;
 import dev.zymekoh.optimatch.catalog.ModrinthVersion;
 import dev.zymekoh.optimatch.install.InstallPlan;
+import dev.zymekoh.optimatch.install.InstalledCheck;
 import dev.zymekoh.optimatch.install.ModInstaller;
 import dev.zymekoh.optimatch.ui.Draw;
 import dev.zymekoh.optimatch.ui.MarkdownView;
@@ -41,6 +42,9 @@ public final class InstallDialog implements Dialog {
 	private final String displayName;
 	private final String projectId;
 
+	/** Non-null when the mod is already loaded or already sitting in mods/. */
+	private final InstalledCheck.State alreadyInstalled;
+
 	private State state = State.LOADING;
 	private ModrinthProject project;
 	private MarkdownView documentation;
@@ -74,6 +78,7 @@ public final class InstallDialog implements Dialog {
 		this.slug = slug;
 		this.displayName = displayName;
 		this.projectId = projectId == null ? "" : projectId;
+		this.alreadyInstalled = InstalledCheck.stateOf(slug, slug);
 
 		ModrinthClient.details(slug).thenAccept(details -> {
 			this.project = details;
@@ -175,6 +180,13 @@ public final class InstallDialog implements Dialog {
 					? "  ·  " + this.plan.dependencyCount() + " dependencias" : ""),
 				badgeX, factsY + 1, Math.max(10, this.x + this.width - badgeX - 12),
 				Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
+		}
+
+		if (this.alreadyInstalled != null) {
+			String note = InstalledCheck.label(this.alreadyInstalled) + " — "
+				+ InstalledCheck.explanation(this.alreadyInstalled);
+			Draw.clippedText(graphics, font, note, this.x + 12, this.y + 62, this.width - 24,
+				Theme.withAlpha(Theme.GOOD, opacity), false);
 		}
 
 		Draw.divider(graphics, this.x + 10, this.y + 70, this.width - 20, opacity);
@@ -414,13 +426,20 @@ public final class InstallDialog implements Dialog {
 	 * worse route, and the Modrinth page is a link, not a decision — it lives as an icon in the header.
 	 */
 	private String[] buttonLabels() {
-		return this.state == State.FINISHED
-			? new String[]{"Hecho", "Cerrar"}
-			: new String[]{"Instalar", "Cancelar"};
+		if (this.state == State.FINISHED) {
+			return new String[]{"Hecho", "Cerrar"};
+		}
+		if (this.alreadyInstalled != null) {
+			return new String[]{InstalledCheck.label(this.alreadyInstalled), "Cerrar"};
+		}
+		return new String[]{"Instalar", "Cancelar"};
 	}
 
 	private String buttonTooltip(int index) {
 		if (index == 0) {
+			if (this.alreadyInstalled != null) {
+				return InstalledCheck.explanation(this.alreadyInstalled);
+			}
 			if (this.state == State.FINISHED) {
 				return "Cierra esta ventana. Los mods se activaran al reiniciar Minecraft.";
 			}
@@ -440,6 +459,10 @@ public final class InstallDialog implements Dialog {
 
 	private boolean isButtonEnabled(int index) {
 		if (index == 0) {
+			// Nothing to download when it is already here: the button stays dim rather than failing.
+			if (this.alreadyInstalled != null && this.state != State.FINISHED) {
+				return false;
+			}
 			return this.state == State.READY || this.state == State.FINISHED;
 		}
 		return this.state != State.INSTALLING;
