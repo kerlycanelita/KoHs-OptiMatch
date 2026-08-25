@@ -92,12 +92,14 @@ public final class ConfigBrowserDialog implements Dialog {
 		ModIcons.draw(graphics, font, this.mod.id(), this.mod.displayName(),
 			this.x + 12, this.y + 12, 20, Theme.ACCENT, opacity);
 
-		graphics.text(font, "Configuracion de " + this.mod.displayName(), this.x + 38, this.y + 13,
-			Theme.withAlpha(Theme.TEXT, opacity), true);
+		// Bounded by where the file counter starts, so a long mod name cannot run under it.
+		String count = this.files.size() + (this.files.size() == 1 ? " archivo" : " archivos");
+		int titleLimit = Math.max(30, this.width - 38 - font.width(count) - 20);
+		Draw.clippedText(graphics, font, "Configuracion de " + this.mod.displayName(), this.x + 38, this.y + 13,
+			titleLimit, Theme.withAlpha(Theme.TEXT, opacity), true);
 		Draw.clippedText(graphics, font, "config/", this.x + 38, this.y + 25, this.width - 50,
 			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 
-		String count = this.files.size() + (this.files.size() == 1 ? " archivo" : " archivos");
 		graphics.text(font, count, this.x + this.width - font.width(count) - 12, this.y + 13,
 			Theme.withAlpha(Theme.TEXT_MUTED, opacity), false);
 

@@ -154,12 +154,13 @@ public final class ConflictsTab implements OptiTab {
 			Draw.clippedText(graphics, font, tally, textX, this.y + 7, maxWidth,
 				Theme.withAlpha(critical > 0 ? Theme.DANGER : Theme.TEXT_MUTED, opacity), false);
 		} else {
-			graphics.text(font, critical + " preocupantes", textX, this.y + 7,
-				Theme.withAlpha(critical > 0 ? Theme.DANGER : Theme.TEXT_DIM, opacity), false);
-			graphics.text(font, warning + " a vigilar", textX + 100, this.y + 7,
-				Theme.withAlpha(warning > 0 ? Theme.WARN : Theme.TEXT_DIM, opacity), false);
-			graphics.text(font, safe + " sin problema", textX + 190, this.y + 7,
-				Theme.withAlpha(Theme.GOOD, opacity), false);
+			// Flowing offsets instead of fixed ones: the counters keep their spacing at any width.
+			int counterX = textX;
+			counterX += drawCounter(graphics, font, critical + " preocupantes", counterX, this.y + 7,
+				critical > 0 ? Theme.DANGER : Theme.TEXT_DIM, opacity);
+			counterX += drawCounter(graphics, font, warning + " a vigilar", counterX, this.y + 7,
+				warning > 0 ? Theme.WARN : Theme.TEXT_DIM, opacity);
+			drawCounter(graphics, font, safe + " sin problema", counterX, this.y + 7, Theme.GOOD, opacity);
 		}
 
 		int listTop = this.y + 20;
@@ -254,6 +255,13 @@ public final class ConflictsTab implements OptiTab {
 				x + 11, lineY, maxWidth - 16, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 			lineY += 9;
 		}
+	}
+
+	/** Draws one counter and reports how much horizontal room it took, gap included. */
+	private static int drawCounter(GuiGraphicsExtractor graphics, Font font, String text, int x, int y,
+								   int color, float opacity) {
+		graphics.text(font, text, x, y, Theme.withAlpha(color, opacity), false);
+		return font.width(text) + 14;
 	}
 
 	private static int levelColor(Conflict.Level level) {

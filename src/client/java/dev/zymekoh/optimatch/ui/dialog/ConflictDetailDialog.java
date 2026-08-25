@@ -109,10 +109,10 @@ public final class ConflictDetailDialog implements Dialog {
 			VersusBanner.render(graphics, font, this.x + 8, this.y + 8, this.width - 16, 58,
 				this.conflict.contenders().get(0), this.conflict.contenders().get(1), now, opacity);
 		} else {
-			graphics.text(font, this.conflict.targetLabel(), this.x + 12, this.y + 12,
-				Theme.withAlpha(Theme.TEXT, opacity), true);
-			graphics.text(font, this.conflict.modIds().size() + " mods implicados", this.x + 12, this.y + 24,
-				Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
+			Draw.clippedText(graphics, font, this.conflict.targetLabel(), this.x + 12, this.y + 12,
+				this.width - 24, Theme.withAlpha(Theme.TEXT, opacity), true);
+			Draw.clippedText(graphics, font, this.conflict.modIds().size() + " mods implicados",
+				this.x + 12, this.y + 24, this.width - 24, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 		}
 		Draw.divider(graphics, this.x + 10, this.bodyTop - 6, this.width - 20, opacity);
 	}
@@ -195,8 +195,13 @@ public final class ConflictDetailDialog implements Dialog {
 			ModIcons.draw(graphics, font, contender.modId(), contender.displayName(),
 				textX + 6, cursorY + 4, 14, Theme.ACCENT, opacity);
 
-			Draw.clippedText(graphics, font, contender.displayName(), textX + 25, cursorY + 3,
-				maxWidth - 120, Theme.withAlpha(Theme.TEXT, opacity), false);
+			// Reserve exactly what the action button occupies, rather than a guessed margin.
+			boolean showsAction = hasConfig(contender.modId());
+			int reserved = showsAction ? 62 + 10 : 8;
+			int nameX = textX + 25;
+			int nameWidth = Math.max(20, textX + maxWidth - reserved - nameX);
+			Draw.clippedText(graphics, font, contender.displayName(), nameX, cursorY + 3,
+				nameWidth, Theme.withAlpha(Theme.TEXT, opacity), false);
 
 			String kindLabel = contender.kind().label();
 			int kindColor = switch (contender.kind().severity()) {
@@ -210,8 +215,7 @@ public final class ConflictDetailDialog implements Dialog {
 				Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 
 			// Offer the mod's own config, which is the only supported way to turn a mixin off.
-			boolean hasConfig = hasConfig(contender.modId());
-			if (hasConfig) {
+			if (showsAction) {
 				int actionWidth = 62;
 				int actionX = textX + maxWidth - actionWidth - 5;
 				boolean hovered = Draw.inside(mouseX, mouseY, actionX, cursorY + 6, actionWidth, 14);
@@ -228,7 +232,7 @@ public final class ConflictDetailDialog implements Dialog {
 				}
 			}
 
-			if (Draw.inside(mouseX, mouseY, textX, cursorY, maxWidth - 70, rowHeight - 3)) {
+			if (Draw.inside(mouseX, mouseY, textX, cursorY, maxWidth - reserved, rowHeight - 3)) {
 				Tooltip.request(kindLabel + " en " + contender.displayName(),
 					injectionExplanation(contender.kind()) + "  Mixin: " + shortMixin(contender.mixinClass()),
 					mouseX, mouseY);

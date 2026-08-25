@@ -117,13 +117,15 @@ public final class ConfigEditorDialog implements Dialog {
 	private void renderHeader(GuiGraphicsExtractor graphics, Font font, float opacity) {
 		boolean dirty = this.document != null && this.document.isDirty();
 		String title = this.file.fileName() + (dirty ? " •" : "");
-		graphics.text(font, title, this.x + 12, this.y + 11,
+		String format = this.file.format().name();
+		// Stops where the format tag begins: long file names are common in config folders.
+		int titleLimit = Math.max(30, this.width - 24 - font.width(format) - 10);
+		Draw.clippedText(graphics, font, title, this.x + 12, this.y + 11, titleLimit,
 			Theme.withAlpha(dirty ? Theme.WARN : Theme.TEXT, opacity), true);
 
 		Draw.clippedText(graphics, font, this.mod.displayName() + "  ·  config/" + this.file.relativePath(),
 			this.x + 12, this.y + 23, this.width - 90, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 
-		String format = this.file.format().name();
 		graphics.text(font, format, this.x + this.width - font.width(format) - 12, this.y + 11,
 			Theme.withAlpha(Theme.ACCENT_BRIGHT, opacity), false);
 

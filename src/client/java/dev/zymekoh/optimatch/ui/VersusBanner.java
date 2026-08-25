@@ -46,22 +46,53 @@ public final class VersusBanner {
 		int iconSize = Math.min(30, height - 16);
 		int iconY = centerY - iconSize / 2;
 
-		drawFighter(graphics, font, left, x + 10, iconY, iconSize, width / 2 - 34, true, opacity);
-		drawFighter(graphics, font, right, x + width - 10 - iconSize, iconY, iconSize, width / 2 - 34, false, opacity);
+		// The VS owns the middle; each side gets a column that stops short of it, so the text can
+		// never run under the mark however wide the dialog gets.
+		int versusHalf = Math.max(24, font.width("VS") * 2);
+		int leftStart = x + 10;
+		int leftEnd = centerX - versusHalf;
+		int rightStart = centerX + versusHalf;
+		int rightEnd = x + width - 10;
+
+		drawFighter(graphics, font, left, leftStart, leftEnd, iconY, iconSize, true, opacity);
+		drawFighter(graphics, font, right, rightStart, rightEnd, iconY, iconSize, false, opacity);
 
 		drawVersus(graphics, font, centerX, centerY, now, opacity);
 	}
 
-	/** One side: icon, name, and the injection it is throwing. */
+	/**
+	 * One side of the card, laid out inside its own column so the two can never collide.
+	 *
+	 * <p>Both portraits sit on the outer edges and their text runs inward toward the VS, which is the
+	 * arrangement a fighting-game select screen uses.
+	 *
+	 * @param columnStart left edge of this side's column
+	 * @param columnEnd   right edge of this side's column
+	 */
 	private static void drawFighter(GuiGraphicsExtractor graphics, Font font, Conflict.Contender contender,
-									int iconX, int iconY, int iconSize, int textWidth, boolean leftSide,
+									int columnStart, int columnEnd, int iconY, int iconSize, boolean leftSide,
 									float opacity) {
+		int columnWidth = Math.max(0, columnEnd - columnStart);
+		if (columnWidth < iconSize + 12) {
+			// Too narrow for text: show the portrait alone rather than a mangled overlap.
+			int iconOnly = leftSide ? columnStart : columnEnd - iconSize;
+			ModIcons.draw(graphics, font, contender.modId(), contender.displayName(),
+				iconOnly, iconY, iconSize, Theme.ACCENT, opacity);
+			return;
+		}
+
+		int iconX = leftSide ? columnStart : columnEnd - iconSize;
 		ModIcons.draw(graphics, font, contender.modId(), contender.displayName(),
 			iconX, iconY, iconSize, Theme.ACCENT, opacity);
 		Draw.outline(graphics, iconX - 1, iconY - 1, iconSize + 2, iconSize + 2,
 			Theme.withAlpha(leftSide ? 0xFFFF9EB5 : 0xFF9EC6FF, opacity));
 
-		int textX = leftSide ? iconX + iconSize + 6 : iconX - textWidth - 6;
+		int textX = leftSide ? iconX + iconSize + 6 : columnStart;
+		int textWidth = leftSide ? columnEnd - textX : iconX - 6 - columnStart;
+		if (textWidth <= 8) {
+			return;
+		}
+
 		Draw.clippedText(graphics, font, contender.displayName(), textX, iconY + 3, textWidth,
 			Theme.withAlpha(Theme.TEXT, opacity), false);
 		Draw.clippedText(graphics, font, contender.kind().label(), textX, iconY + 13, textWidth,

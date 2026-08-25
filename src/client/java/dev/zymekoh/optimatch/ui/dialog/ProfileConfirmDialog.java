@@ -101,7 +101,7 @@ public final class ProfileConfirmDialog implements Dialog {
 		String title = destructive
 			? "Eliminar el perfil \"" + this.profile.name() + "\""
 			: "Se instalaran estos mods";
-		graphics.text(font, title, this.x + 12, this.y + 12,
+		Draw.clippedText(graphics, font, title, this.x + 12, this.y + 12, this.width - 24,
 			Theme.withAlpha(destructive ? Theme.DANGER : Theme.TEXT, opacity), true);
 
 		String subtitle = destructive

@@ -148,7 +148,8 @@ public final class InstallDialog implements Dialog {
 		int textX = iconX + iconSize + 10;
 		int textWidth = this.x + this.width - textX - 12;
 
-		graphics.text(font, this.displayName, textX, this.y + 14, Theme.withAlpha(Theme.TEXT, opacity), true);
+		Draw.clippedText(graphics, font, this.displayName, textX, this.y + 14, textWidth,
+			Theme.withAlpha(Theme.TEXT, opacity), true);
 
 		if (this.project != null) {
 			Draw.clippedText(graphics, font, this.project.description(), textX, this.y + 26, textWidth,
