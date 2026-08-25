@@ -45,11 +45,20 @@ public final class Catalog {
 	 */
 	public static void refreshFromRemote() {
 		RemoteCatalog.refresh().thenAccept(updated -> updated.ifPresent(json -> {
+			int incoming = revisionOf(json);
+			int current = revisionOf(readBundled());
+			// Never move backwards: a rolled-back publish must not undo a newer bundled catalog.
+			if (incoming < current) {
+				OptiMatchClient.LOGGER.warn("Remote catalog r{} is older than the bundled r{}; keeping the bundled one",
+					incoming, current);
+				return;
+			}
 			Map<String, CatalogEntry> parsed = parseAll(json);
 			if (!parsed.isEmpty()) {
 				byModId = parsed;
-				source = "remoto";
-				OptiMatchClient.LOGGER.info("Catalog replaced from remote: {} entries", parsed.size());
+				source = "remoto r" + incoming;
+				OptiMatchClient.LOGGER.info("Catalog replaced from remote: {} entries (revision {})",
+					parsed.size(), incoming);
 			}
 		}));
 	}
@@ -90,29 +99,55 @@ public final class Catalog {
 	 * it is still usable, otherwise the copy bundled in the jar.
 	 */
 	private static Map<String, CatalogEntry> load() {
+		String bundledJson = readBundled();
+		int bundledRevision = revisionOf(bundledJson);
+
 		Optional<String> cached = RemoteCatalog.cached();
 		if (cached.isPresent()) {
-			Map<String, CatalogEntry> fromCache = parseAll(cached.get());
-			if (!fromCache.isEmpty()) {
-				source = "cache";
-				OptiMatchClient.LOGGER.info("Loaded {} catalog entries from cache", fromCache.size());
-				return fromCache;
+			int cachedRevision = revisionOf(cached.get());
+			// A cache downloaded before a mod update can be older than what now ships in the jar.
+			// Without this check a corrected bundled catalog would stay shadowed forever.
+			if (cachedRevision >= bundledRevision) {
+				Map<String, CatalogEntry> fromCache = parseAll(cached.get());
+				if (!fromCache.isEmpty()) {
+					source = "cache r" + cachedRevision;
+					OptiMatchClient.LOGGER.info("Loaded {} catalog entries from cache (revision {})",
+						fromCache.size(), cachedRevision);
+					return fromCache;
+				}
+			} else {
+				OptiMatchClient.LOGGER.info("Ignoring cached catalog r{}: the bundled one is newer (r{})",
+					cachedRevision, bundledRevision);
 			}
 		}
 
+		Map<String, CatalogEntry> bundled = parseAll(bundledJson);
+		source = "incrustado r" + bundledRevision;
+		OptiMatchClient.LOGGER.info("Loaded {} curated catalog entries (revision {})",
+			bundled.size(), bundledRevision);
+		return bundled;
+	}
+
+	private static String readBundled() {
 		try (InputStream stream = Catalog.class.getResourceAsStream(RESOURCE)) {
 			if (stream == null) {
 				OptiMatchClient.LOGGER.error("Bundled catalog {} is missing from the jar", RESOURCE);
-				return new LinkedHashMap<>();
+				return "";
 			}
-			String json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-			Map<String, CatalogEntry> bundled = parseAll(json);
-			source = "incrustado";
-			OptiMatchClient.LOGGER.info("Loaded {} curated catalog entries", bundled.size());
-			return bundled;
+			return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (Exception exception) {
 			OptiMatchClient.LOGGER.error("Could not read the curated catalog", exception);
-			return new LinkedHashMap<>();
+			return "";
+		}
+	}
+
+	/** Monotonic revision of a catalog document; absent counts as 0. */
+	private static int revisionOf(String json) {
+		try {
+			JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+			return root.has("revision") ? root.get("revision").getAsInt() : 0;
+		} catch (Exception exception) {
+			return 0;
 		}
 	}
 
@@ -159,11 +194,26 @@ public final class Catalog {
 				strings(object, "requires"),
 				strings(object, "replaces"),
 				strings(object, "clashes"),
-				object.has("desktopOnly") && object.get("desktopOnly").getAsBoolean()
+				object.has("desktopOnly") && object.get("desktopOnly").getAsBoolean(),
+				parseCompetitive(object),
+				string(object, "competitiveNote")
 			);
 		} catch (Exception exception) {
 			OptiMatchClient.LOGGER.warn("Skipping malformed catalog entry: {}", object, exception);
 			return null;
+		}
+	}
+
+	/** Unrated entries default to RISKY: the competitive preset only ever opts things in. */
+	private static CatalogEntry.Competitive parseCompetitive(JsonObject object) {
+		JsonElement element = object.get("competitive");
+		if (element == null || element.isJsonNull()) {
+			return CatalogEntry.Competitive.RISKY;
+		}
+		try {
+			return CatalogEntry.Competitive.valueOf(element.getAsString().toUpperCase(Locale.ROOT));
+		} catch (IllegalArgumentException exception) {
+			return CatalogEntry.Competitive.RISKY;
 		}
 	}
 

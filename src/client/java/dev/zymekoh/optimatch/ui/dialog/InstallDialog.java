@@ -9,6 +9,7 @@ import dev.zymekoh.optimatch.install.ModInstaller;
 import dev.zymekoh.optimatch.ui.Draw;
 import dev.zymekoh.optimatch.ui.MarkdownView;
 import dev.zymekoh.optimatch.ui.Anim;
+import dev.zymekoh.optimatch.ui.Mascot;
 import dev.zymekoh.optimatch.ui.ModIcons;
 import dev.zymekoh.optimatch.ui.Tooltip;
 import dev.zymekoh.optimatch.ui.Theme;
@@ -106,7 +107,7 @@ public final class InstallDialog implements Dialog {
 
 		switch (this.state) {
 			case LOADING -> this.renderCentered(graphics, font, "Consultando Modrinth...", now, opacity);
-			case BLOCKED -> this.renderBlocked(graphics, font, opacity);
+			case BLOCKED -> this.renderBlocked(graphics, font, now, opacity);
 			case READY -> this.renderDocumentation(graphics, font, opacity);
 			case INSTALLING, FINISHED -> this.renderProgress(graphics, font, opacity);
 		}
@@ -171,10 +172,21 @@ public final class InstallDialog implements Dialog {
 		Draw.roundedRect(graphics, barX + sweep, centerY + 6, 40, 4, 2, Theme.withAlpha(Theme.ACCENT, opacity));
 	}
 
-	private void renderBlocked(GuiGraphicsExtractor graphics, Font font, float opacity) {
+	private void renderBlocked(GuiGraphicsExtractor graphics, Font font, long now, float opacity) {
 		int textX = this.x + 12;
 		int maxWidth = this.width - 24;
 		int cursorY = this.docTop;
+
+		// A connection failure is not the mod's fault, so it gets the friendly treatment.
+		boolean offline = this.plan != null && this.plan.blockers().stream()
+			.anyMatch(blocker -> blocker.toLowerCase(java.util.Locale.ROOT).contains("conexion"));
+		if (offline) {
+			Mascot.renderErrorState(graphics, font, this.x, this.docTop, this.width, this.docBottom - this.docTop,
+				"No se pudo consultar Modrinth",
+				"Sin conexion no se puede comprobar que exista una version para tu Minecraft, "
+					+ "y no se instala nada a ciegas.", now, opacity);
+			return;
+		}
 
 		cursorY = Draw.sectionHeader(graphics, font, "No se puede instalar", textX, cursorY, maxWidth,
 			Theme.DANGER, opacity);
@@ -220,6 +232,15 @@ public final class InstallDialog implements Dialog {
 		if (this.documentation != null && !this.documentation.isEmpty()) {
 			cursorY = Draw.sectionHeader(graphics, font, "Documentacion", textX, cursorY, maxWidth,
 				Theme.ACCENT_BRIGHT, opacity);
+
+			// Say what this viewer leaves out rather than silently showing a poorer version.
+			if (this.documentation.strippedImages() > 0) {
+				cursorY = Draw.wrappedText(graphics, font,
+					this.documentation.strippedImages() + " imagenes no se muestran aqui — "
+						+ "usa \"Ver en Modrinth\" para leerla completa en el navegador.",
+					textX, cursorY, maxWidth, 2, Theme.WARN, opacity);
+				cursorY += 3;
+			}
 			this.documentation.render(graphics, font, textX, cursorY, maxWidth,
 				this.docTop, this.docBottom, opacity);
 			cursorY += this.documentation.contentHeight(font, maxWidth);

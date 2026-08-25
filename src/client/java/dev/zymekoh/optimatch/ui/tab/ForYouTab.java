@@ -73,6 +73,9 @@ public final class ForYouTab implements OptiTab {
 	private int buttonGap;
 	private boolean buttonsStacked;
 	private int resultTop;
+	private int resultX;
+	private int resultWidth;
+	private int presetPaneWidth;
 
 	private int scroll;
 	private int maxScroll;
@@ -107,28 +110,40 @@ public final class ForYouTab implements OptiTab {
 		this.height = height;
 		this.breakpoint = breakpoint;
 
-		this.analysisHeight = Mth.clamp(Math.round(height * 0.32F), 44, breakpoint.pick(66, 76, 84));
+		this.analysisHeight = Mth.clamp(Math.round(height * 0.30F), 44, breakpoint.pick(66, 76, 84));
 		this.buttonsTop = y + this.analysisHeight + 6;
-		this.buttonGap = breakpoint.pick(3, 6, 8);
+		this.buttonGap = 4;
 
-		this.buttonsStacked = breakpoint.isCompact();
-		if (this.buttonsStacked) {
-			this.buttonHeight = 16;
+		// Below the machine panel the row splits: goals on the left, their mods on the right.
+		int paneHeight = Math.max(40, height - this.analysisHeight - 6);
+		this.buttonsStacked = true;
+		this.buttonHeight = Mth.clamp((paneHeight - this.buttonGap * (PRESETS.length - 1)) / PRESETS.length,
+			16, breakpoint.pick(20, 34, 38));
+
+		if (breakpoint.isCompact()) {
+			// Too narrow for two columns: goals across the top, results underneath.
+			this.presetPaneWidth = width;
 			this.buttonWidth = width;
+			this.buttonHeight = 16;
+			this.resultX = this.x;
+			this.resultWidth = width;
 			this.resultTop = this.buttonsTop + (this.buttonHeight + 3) * PRESETS.length + 4;
 		} else {
-			this.buttonHeight = 32;
-			this.buttonWidth = Math.max(60, (width - this.buttonGap * (PRESETS.length - 1)) / PRESETS.length);
-			this.resultTop = this.buttonsTop + this.buttonHeight + 7;
+			this.presetPaneWidth = Mth.clamp(Math.round(width * 0.34F), 110, 210);
+			this.buttonWidth = this.presetPaneWidth;
+			this.resultX = this.x + this.presetPaneWidth + 6;
+			this.resultWidth = Math.max(90, width - this.presetPaneWidth - 6);
+			this.resultTop = this.buttonsTop;
 		}
 	}
 
 	private int buttonX(int index) {
-		return this.buttonsStacked ? this.x : this.x + index * (this.buttonWidth + this.buttonGap);
+		return this.x;
 	}
 
 	private int buttonY(int index) {
-		return this.buttonsStacked ? this.buttonsTop + index * (this.buttonHeight + 3) : this.buttonsTop;
+		int step = this.buttonHeight + (this.breakpoint.isCompact() ? 3 : this.buttonGap);
+		return this.buttonsTop + index * step;
 	}
 
 	@Override
@@ -207,14 +222,21 @@ public final class ForYouTab implements OptiTab {
 					Theme.argb(Math.round((140 + pulse * 100) * opacity), accent & 0xFFFFFF));
 			}
 
-			if (this.buttonsStacked) {
-				Draw.clippedText(graphics, font, preset.title(), bx + 7, by + (this.buttonHeight - 8) / 2,
-					this.buttonWidth - 14, Theme.withAlpha(Theme.TEXT, opacity), false);
+			if (this.buttonHeight <= 20) {
+				Draw.clippedText(graphics, font, preset.title(), bx + 8, by + (this.buttonHeight - 8) / 2,
+					this.buttonWidth - 16, Theme.withAlpha(Theme.TEXT, opacity), false);
 			} else {
-				graphics.centeredText(font, font.plainSubstrByWidth(preset.title(), this.buttonWidth - 8),
-					bx + this.buttonWidth / 2, by + 7, Theme.withAlpha(Theme.TEXT, opacity));
-				Draw.wrappedText(graphics, font, preset.description(), bx + 5, by + 18,
-					this.buttonWidth - 10, 1, Theme.TEXT_DIM, opacity);
+				// A colour chip ties the goal to the accent used on its results.
+				graphics.fill(bx + 5, by + 6, bx + 8, by + this.buttonHeight - 6,
+					Theme.withAlpha(accent, opacity));
+				Draw.clippedText(graphics, font, preset.title(), bx + 13, by + 5,
+					this.buttonWidth - 20, Theme.withAlpha(Theme.TEXT, opacity), false);
+				Draw.wrappedText(graphics, font, preset.description(), bx + 13, by + 15,
+					this.buttonWidth - 20, this.buttonHeight >= 34 ? 2 : 1, Theme.TEXT_DIM, opacity);
+			}
+
+			if (hovered) {
+				Tooltip.request(preset.title(), preset.description(), mouseX, mouseY);
 			}
 		}
 	}
@@ -227,23 +249,22 @@ public final class ForYouTab implements OptiTab {
 			return;
 		}
 
-		Draw.panel(graphics, this.x, this.resultTop, this.width, resultHeight, 6,
+		Draw.panel(graphics, this.resultX, this.resultTop, this.resultWidth, resultHeight, 6,
 			Theme.withAlpha(Theme.PANEL, opacity), Theme.withAlpha(Theme.BORDER_SOFT, opacity));
 
 		if (this.active == null) {
 			graphics.centeredText(font,
-				Component.literal(this.breakpoint.isCompact()
-					? "Elige un objetivo" : "Elige un objetivo arriba para ver que mods te faltan"),
-				this.x + this.width / 2, this.resultTop + resultHeight / 2 - 4,
+				Component.literal(this.breakpoint.isCompact() ? "Elige un objetivo" : "Elige un objetivo"),
+				this.resultX + this.resultWidth / 2, this.resultTop + resultHeight / 2 - 4,
 				Theme.withAlpha(Theme.TEXT_DIM, opacity));
 			return;
 		}
 
-		int textX = this.x + 8;
-		int maxWidth = this.width - 16;
+		int textX = this.resultX + 8;
+		int maxWidth = this.resultWidth - 16;
 		int bottom = this.resultTop + resultHeight - 4;
 
-		graphics.enableScissor(this.x + 1, this.resultTop + 1, this.x + this.width - 1, bottom);
+		graphics.enableScissor(this.resultX + 1, this.resultTop + 1, this.resultX + this.resultWidth - 1, bottom);
 		int cursorY = this.resultTop + 7 - this.scroll;
 
 		if (this.availability == null) {
@@ -506,7 +527,8 @@ public final class ForYouTab implements OptiTab {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (this.maxScroll <= 0
-			|| !Draw.inside(mouseX, mouseY, this.x, this.resultTop, this.width, this.y + this.height - this.resultTop)) {
+			|| !Draw.inside(mouseX, mouseY, this.resultX, this.resultTop, this.resultWidth,
+			this.y + this.height - this.resultTop)) {
 			return false;
 		}
 		this.scroll = Mth.clamp(this.scroll - (int) Math.round(amount * 16), 0, this.maxScroll);

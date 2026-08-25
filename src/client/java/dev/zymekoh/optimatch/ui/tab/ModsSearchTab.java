@@ -4,6 +4,7 @@ import dev.zymekoh.optimatch.catalog.ModrinthClient;
 import dev.zymekoh.optimatch.catalog.ModrinthProject;
 import dev.zymekoh.optimatch.ui.Breakpoint;
 import dev.zymekoh.optimatch.ui.Draw;
+import dev.zymekoh.optimatch.ui.Mascot;
 import dev.zymekoh.optimatch.ui.ModIcons;
 import dev.zymekoh.optimatch.ui.OptiTab;
 import dev.zymekoh.optimatch.ui.Theme;
@@ -37,6 +38,8 @@ public final class ModsSearchTab implements OptiTab {
 	private long lastEdit;
 	private boolean searchPending;
 	private boolean loading;
+	/** Set when the request itself failed, which is a different story from zero matches. */
+	private boolean offline;
 	private List<ModrinthProject> results = List.of();
 	private int page;
 	private boolean loadedOnce;
@@ -128,7 +131,7 @@ public final class ModsSearchTab implements OptiTab {
 			}
 		}
 
-		String status = this.loading ? "buscando..." : this.results.size() + " resultados";
+		String status = this.loading ? "buscando..." : this.offline ? "sin conexion" : this.results.size() + " resultados";
 		graphics.text(font, status, this.x + this.width - font.width(status) - 8, textY,
 			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 	}
@@ -159,6 +162,14 @@ public final class ModsSearchTab implements OptiTab {
 			Draw.roundedRect(graphics, barX, centerY + 6, barWidth, 4, 2, Theme.withAlpha(Theme.PANEL_RAISED, opacity));
 			int sweep = Math.round(Draw.cycle(now, 1300L) * Math.max(1, barWidth - 40));
 			Draw.roundedRect(graphics, barX + sweep, centerY + 6, 40, 4, 2, Theme.withAlpha(Theme.ACCENT, opacity));
+			return;
+		}
+
+		if (this.offline) {
+			Mascot.renderErrorState(graphics, font, this.x, this.listTop, this.width, listBottom - this.listTop,
+				"No se pudo conectar con Modrinth",
+				"Comprueba tu conexion. Los mods que ya tienes instalados se siguen analizando sin internet.",
+				now, opacity);
 			return;
 		}
 
@@ -225,12 +236,14 @@ public final class ModsSearchTab implements OptiTab {
 			if (snapshot.equals(this.query)) {
 				this.results = found;
 				this.loading = false;
+				this.offline = false;
 				this.scroll = 0;
 				this.loadIcons(found);
 			}
 		}).exceptionally(throwable -> {
 			this.results = List.of();
 			this.loading = false;
+			this.offline = true;
 			return null;
 		});
 	}

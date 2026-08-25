@@ -16,6 +16,15 @@ public enum Preset {
 		"Vanilla mejorado",
 		"FPS y latencia estables, con un Minecraft bonito pero competitivo para PvP.",
 		0xFFD7A6FF
+	),
+	/**
+	 * Only what the big networks' anticheats tolerate: performance, input fidelity and information
+	 * you already have. Nothing that automates, reveals or changes the camera.
+	 */
+	COMPETITIVE_LEGIT(
+		"Competitive Legit",
+		"Solo lo que aceptan los anticheats fuertes. Sin automatizacion, minimapas ni freelook.",
+		0xFF7FD8C8
 	);
 
 	private final String title;

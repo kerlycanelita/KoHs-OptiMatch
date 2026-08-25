@@ -283,7 +283,9 @@ public final class ModrinthClient {
 				return List.copyOf(projects);
 			} catch (Exception exception) {
 				OptiMatchClient.LOGGER.debug("Modrinth search failed for '{}'", query, exception);
-				return List.<ModrinthProject>of();
+				// Propagated on purpose: an empty list means "no matches", not "no connection",
+				// and the UI shows a very different thing for each.
+				throw new java.util.concurrent.CompletionException(exception);
 			}
 		});
 	}

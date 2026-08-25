@@ -41,11 +41,17 @@ public final class HardwareScanner {
 		String gpuVendor = "";
 		String gpuBackend = "";
 
-		GpuDevice device = RenderSystem.tryGetDevice();
-		if (device != null) {
-			gpuName = orUnknown(device.getRenderer(), "Desconocida");
-			gpuVendor = orUnknown(device.getVendor(), "");
-			gpuBackend = orUnknown(device.getBackendName(), "");
+		try {
+			// Only legal on the render thread: RenderSystem throws outright anywhere else.
+			GpuDevice device = RenderSystem.tryGetDevice();
+			if (device != null) {
+				gpuName = orUnknown(device.getRenderer(), "Desconocida");
+				gpuVendor = orUnknown(device.getVendor(), "");
+				gpuBackend = orUnknown(device.getBackendName(), "");
+			}
+		} catch (Throwable throwable) {
+			// Everything else in the profile is still worth having, so degrade instead of failing.
+			OptiMatchClient.LOGGER.debug("GPU probe unavailable on this thread", throwable);
 		}
 
 		String cpuName = "Desconocida";

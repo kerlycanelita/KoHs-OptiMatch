@@ -101,6 +101,13 @@ public final class PresetBuilder {
 				}
 				yield entry.fpsImpact() >= 1 || entry.latencyImpact() >= 1 || entry.hasRole(ModRole.PVP);
 			}
+
+			// Opt-in only: anything not explicitly cleared stays out, and nothing that costs
+			// responsiveness gets in however many frames it buys.
+			case COMPETITIVE_LEGIT -> entry.isCompetitiveSafe()
+				&& !entry.hurtsLatency()
+				&& entry.fpsImpact() >= 0
+				&& (entry.latencyImpact() >= 1 || entry.fpsImpact() >= 1 || entry.hasRole(ModRole.PVP));
 		};
 	}
 
@@ -116,6 +123,9 @@ public final class PresetBuilder {
 			case MAX_FPS -> entry.fpsImpact() * 18 + entry.latencyImpact() * 4;
 			case MIN_LATENCY -> entry.latencyImpact() * 18 + entry.fpsImpact() * 4;
 			case VANILLA_ENHANCED -> entry.fpsImpact() * 11 + entry.latencyImpact() * 11;
+			// In a duel, reacting sooner beats drawing more: latency leads, then frames.
+			case COMPETITIVE_LEGIT -> entry.latencyImpact() * 15 + entry.fpsImpact() * 9
+				+ (entry.hasRole(ModRole.PVP) ? 12 : 0);
 		};
 
 		int bonus = 0;
@@ -209,6 +219,18 @@ public final class PresetBuilder {
 			if (preset == Preset.VANILLA_ENHANCED && entry.hurtsLatency()) {
 				warnings.add(new Recommendation.Warning(mod.id(), entry.name(),
 					"Penaliza la respuesta en PvP."));
+			}
+
+			// The warning that actually matters here: something already installed could get you banned.
+			if (preset == Preset.COMPETITIVE_LEGIT) {
+				switch (entry.competitive()) {
+					case BANNED -> warnings.add(new Recommendation.Warning(mod.id(), entry.name(),
+						"PROHIBIDO — " + entry.competitiveNote()));
+					case RISKY -> warnings.add(new Recommendation.Warning(mod.id(), entry.name(),
+						"Zona gris — " + entry.competitiveNote()));
+					default -> {
+					}
+				}
 			}
 			// Hardware-specific: a heavy visual mod on a machine that cannot carry it.
 			if (entry.hasRole(ModRole.VISUAL) && entry.fpsImpact() < 0 && hardware.isLowEnd()) {

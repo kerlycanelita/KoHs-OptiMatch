@@ -14,6 +14,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  */
 public final class MarkdownView {
 	private final List<Block> blocks = new ArrayList<>();
+	/** Images dropped while parsing, so the reader can be told what is not shown here. */
+	private int strippedImages;
 	private List<Line> wrapped = List.of();
 	private int wrappedWidth = -1;
 
@@ -50,7 +52,11 @@ public final class MarkdownView {
 				continue;
 			}
 			// Badge rows and bare HTML carry nothing useful once the images are gone.
-			if (line.startsWith("<") || line.startsWith("![")) {
+			if (line.startsWith("![")) {
+				this.strippedImages++;
+				continue;
+			}
+			if (line.startsWith("<")) {
 				continue;
 			}
 
@@ -194,5 +200,10 @@ public final class MarkdownView {
 
 	public boolean isEmpty() {
 		return this.blocks.isEmpty();
+	}
+
+	/** How many images this viewer left out; shown as a prompt to open the page in a browser. */
+	public int strippedImages() {
+		return this.strippedImages;
 	}
 }

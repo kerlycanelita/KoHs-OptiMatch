@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "revision": 2,
   "_comment": [
     "Catalogo publicado de KoHs OptiMatch.",
     "El mod lo descarga al arrancar y lo cachea con ETag, asi que editar ESTE archivo",
@@ -18,7 +19,9 @@
       ],
       "summary": "Reescribe por completo el motor de renderizado. Es la mayor subida de FPS que existe y, al bajar el frametime, tambien reduce la latencia visual.",
       "fpsImpact": 3,
-      "latencyImpact": 2
+      "latencyImpact": 2,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Rendimiento puro. Permitido en todas las redes."
     },
     {
       "modId": "raw_input_buffer",
@@ -29,7 +32,9 @@
       ],
       "summary": "Reduce el input lag y las caidas de FPS causadas por el sondeo del raton. Es de lo mas directo que hay contra el retardo de mouse.",
       "fpsImpact": 1,
-      "latencyImpact": 3
+      "latencyImpact": 3,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Entrada cruda del raton: fidelidad de hardware, no automatiza."
     },
     {
       "modId": "ixeris",
@@ -41,7 +46,9 @@
       ],
       "summary": "Entrada cruda con buffer y sondeo de eventos en un hilo aparte. Desacopla tu raton y teclado del hilo principal del juego.",
       "fpsImpact": 1,
-      "latencyImpact": 3
+      "latencyImpact": 3,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Sondeo de entrada en otro hilo. No genera clics."
     },
     {
       "modId": "no_input_lag_tick_rate",
@@ -53,7 +60,9 @@
       ],
       "summary": "Permite bajar el tick rate sin que suba la latencia de entrada.",
       "fpsImpact": 1,
-      "latencyImpact": 2
+      "latencyImpact": 2,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo afecta al ritmo interno de tick."
     },
     {
       "modId": "lithium",
@@ -65,7 +74,9 @@
       ],
       "summary": "Optimiza la logica del juego (fisicas, IA de entidades, redstone) sin cambiar comportamiento. Elimina tirones en mundos cargados.",
       "fpsImpact": 1,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Optimiza logica sin cambiar comportamiento."
     },
     {
       "modId": "ferritecore",
@@ -76,7 +87,9 @@
       ],
       "summary": "Reduce mucho el uso de RAM cambiando como se almacenan los estados de bloque. Clave con 4-8 GB o en Pojav.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo reduce memoria."
     },
     {
       "modId": "immediatelyfast",
@@ -88,7 +101,9 @@
       ],
       "summary": "Acelera el renderizado inmediato: HUD, inventarios, texto y entidades. Se nota sobre todo al abrir cofres e inventarios.",
       "fpsImpact": 2,
-      "latencyImpact": 2
+      "latencyImpact": 2,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo acelera el dibujado."
     },
     {
       "modId": "badoptimizations",
@@ -99,7 +114,9 @@
       ],
       "summary": "Conjunto de optimizaciones pequenas que suman: cache de iluminacion, menos trabajo por frame y arranque mas rapido.",
       "fpsImpact": 2,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Optimizaciones internas, sin efecto de juego."
     },
     {
       "modId": "entityculling",
@@ -110,7 +127,9 @@
       ],
       "summary": "Deja de renderizar entidades y cofres que no ves. Gran ganancia en granjas y bases llenas de mobs.",
       "fpsImpact": 2,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "No renderiza lo que ya no se ve; no revela nada oculto."
     },
     {
       "modId": "packetfixer",
@@ -122,7 +141,9 @@
       ],
       "summary": "Corrige y agiliza el manejo de paquetes grandes. Evita desconexiones y cortes en servidores cargados.",
       "fpsImpact": 0,
-      "latencyImpact": 2
+      "latencyImpact": 2,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Corrige el manejo de paquetes grandes."
     },
     {
       "modId": "krypton",
@@ -134,7 +155,9 @@
       ],
       "summary": "Optimiza la pila de red. En servidores baja el retardo percibido de golpes y movimiento.",
       "fpsImpact": 0,
-      "latencyImpact": 2
+      "latencyImpact": 2,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Optimiza la pila de red."
     },
     {
       "modId": "fast_ip_ping",
@@ -145,7 +168,9 @@
       ],
       "summary": "Acelera la resolucion de direcciones al conectar. Entras al servidor antes.",
       "fpsImpact": 0,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo acelera la resolucion al conectar."
     },
     {
       "modId": "moreculling",
@@ -156,7 +181,9 @@
       ],
       "summary": "Amplia el descarte de caras de bloques ocultas. Suma bien encima de Sodium.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Descarte de caras, puramente grafico."
     },
     {
       "modId": "cullleaves",
@@ -167,7 +194,9 @@
       ],
       "summary": "Descarta caras internas de las hojas. Ganancia clara en biomas de bosque y jungla.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Puramente grafico."
     },
     {
       "modId": "leavesbegone",
@@ -178,7 +207,9 @@
       ],
       "summary": "Simplifica el renderizado de hojas. Util en equipos modestos y en Pojav.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Puramente grafico."
     },
     {
       "modId": "betterblockentities",
@@ -189,7 +220,9 @@
       ],
       "summary": "Convierte cofres, camas y estanterias en modelos normales en vez de entidades de bloque. Sube FPS en zonas con muchos cofres.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Cambia como se dibujan cofres, no lo que ves."
     },
     {
       "modId": "particlecore",
@@ -200,7 +233,9 @@
       ],
       "summary": "Optimiza el sistema de particulas y permite recortar las que no aportan. Ayuda mucho en peleas con muchos efectos.",
       "fpsImpact": 1,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Control de particulas, cosmetico."
     },
     {
       "modId": "scalablelux",
@@ -212,7 +247,9 @@
       ],
       "summary": "Motor de iluminacion en hilos aparte. Quita los tirones al generar o cargar chunks.",
       "fpsImpact": 1,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Motor de luz, sin efecto de juego."
     },
     {
       "modId": "chloride",
@@ -226,7 +263,9 @@
       "latencyImpact": 0,
       "requires": [
         "sodium"
-      ]
+      ],
+      "competitive": "ALLOWED",
+      "competitiveNote": "Complemento de rendimiento de Sodium."
     },
     {
       "modId": "lmd",
@@ -238,7 +277,9 @@
       ],
       "summary": "Ajusta el despawn de mobs para que no se acumulen. Menos entidades, mas TPS y mas FPS.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Ajusta despawn de mobs, sin ventaja sobre jugadores."
     },
     {
       "modId": "alternate-current",
@@ -249,7 +290,9 @@
       ],
       "summary": "Reimplementa el calculo de redstone. Elimina los tirones en granjas y maquinas grandes.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Reimplementa redstone, identico en resultado."
     },
     {
       "modId": "ksyxis",
@@ -260,7 +303,9 @@
       ],
       "summary": "Acelera muchisimo la carga de mundos saltandose chunks innecesarios al entrar.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo acelera la carga de mundos."
     },
     {
       "modId": "languagereload",
@@ -271,7 +316,9 @@
       ],
       "summary": "Carga de idiomas mas rapida y con menos memoria. Reduce el tiempo de arranque.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo carga de idiomas."
     },
     {
       "modId": "mousetweaks",
@@ -283,7 +330,9 @@
       ],
       "summary": "Arrastrar, repartir y mover pilas en el inventario con el raton. Menos clics y menos tiempo con el inventario abierto.",
       "fpsImpact": 0,
-      "latencyImpact": 1
+      "latencyImpact": 1,
+      "competitive": "RISKY",
+      "competitiveNote": "Automatiza movimientos de inventario. Varias redes lo consideran macro."
     },
     {
       "modId": "debugify",
@@ -294,7 +343,9 @@
       ],
       "summary": "Aplica correcciones de bugs de Mojang ya reportados. Algunos afectan a hitboxes y sonido, utiles en PvP.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Aplica correcciones de bugs ya reportados a Mojang."
     },
     {
       "modId": "betterf3",
@@ -305,7 +356,9 @@
       ],
       "summary": "Reemplaza la pantalla de depuracion por una configurable y legible. Util para vigilar FPS y latencia en directo.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Reordena la pantalla F3 que ya trae el juego."
     },
     {
       "modId": "sodium_extra",
@@ -320,7 +373,9 @@
       "latencyImpact": 0,
       "requires": [
         "sodium"
-      ]
+      ],
+      "competitive": "ALLOWED",
+      "competitiveNote": "Opciones graficas extra."
     },
     {
       "modId": "dynamic_fps",
@@ -332,7 +387,9 @@
       ],
       "summary": "Baja los FPS cuando la ventana no tiene el foco. Ahorra bateria y calor, pero no aporta nada mientras juegas.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Baja FPS sin foco; no actua por ti."
     },
     {
       "modId": "exordium",
@@ -343,7 +400,9 @@
       ],
       "summary": "Limita a cuantos fotogramas se redibuja el HUD y los inventarios. Sube FPS, pero ANADE retardo visible a la interfaz: mala idea para PvP.",
       "fpsImpact": 2,
-      "latencyImpact": -2
+      "latencyImpact": -2,
+      "competitive": "RISKY",
+      "competitiveNote": "Permitido, pero limita el refresco del HUD: te retrasa la informacion en pelea."
     },
     {
       "modId": "nvidium",
@@ -358,7 +417,9 @@
       "requires": [
         "sodium"
       ],
-      "desktopOnly": true
+      "desktopOnly": true,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Renderizador; rendimiento puro."
     },
     {
       "modId": "c2me",
@@ -369,7 +430,9 @@
       ],
       "summary": "Generacion y carga de chunks en paralelo. Ayuda al explorar, pero es la parte mas delicada: usalo con cuidado.",
       "fpsImpact": 1,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Generacion de chunks en paralelo."
     },
     {
       "modId": "iris",
@@ -383,7 +446,9 @@
       "latencyImpact": -1,
       "requires": [
         "sodium"
-      ]
+      ],
+      "competitive": "ALLOWED",
+      "competitiveNote": "Los shaders son cosmeticos y estan permitidos, pero cuestan FPS."
     },
     {
       "modId": "modmenu",
@@ -394,7 +459,9 @@
       ],
       "summary": "Anade la lista de mods y sus ajustes al menu principal.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo interfaz de mods."
     },
     {
       "modId": "cloth-config",
@@ -405,7 +472,74 @@
       ],
       "summary": "Libreria de pantallas de configuracion que usan muchos mods.",
       "fpsImpact": 0,
-      "latencyImpact": 0
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Libreria de configuracion."
+    },
+    {
+      "modId": "armorhud",
+      "slug": "armor-hud",
+      "name": "Armor HUD",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Muestra tu armadura y su durabilidad junto a la barra. Informacion que ya tienes, mas a mano.",
+      "fpsImpact": 0,
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Solo muestra tu propio equipo. No revela nada del rival."
+    },
+    {
+      "modId": "appleskin",
+      "slug": "appleskin",
+      "name": "AppleSkin",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Muestra saturacion y cuanta hambre restaura la comida. Clave para gestionar regeneracion en PvP.",
+      "fpsImpact": 0,
+      "latencyImpact": 0,
+      "competitive": "ALLOWED",
+      "competitiveNote": "Expone valores de tu propio jugador que el juego ya calcula."
+    },
+    {
+      "modId": "xaerominimap",
+      "slug": "xaeros-minimap",
+      "name": "Xaero's Minimap",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Minimapa con radar de entidades.",
+      "fpsImpact": -1,
+      "latencyImpact": 0,
+      "competitive": "BANNED",
+      "competitiveNote": "Hypixel prohibe los minimapas de forma explicita. Riesgo de sancion."
+    },
+    {
+      "modId": "freelook",
+      "slug": "freelook",
+      "name": "Freelook",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Permite mirar alrededor sin girar el personaje.",
+      "fpsImpact": 0,
+      "latencyImpact": 0,
+      "competitive": "BANNED",
+      "competitiveNote": "Los mods de perspectiva y camara estan prohibidos de forma explicita."
+    },
+    {
+      "modId": "inventoryprofilesnext",
+      "slug": "inventory-profiles-next",
+      "name": "Inventory Profiles Next",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Ordena y reparte el inventario automaticamente.",
+      "fpsImpact": 0,
+      "latencyImpact": 0,
+      "competitive": "BANNED",
+      "competitiveNote": "Automatiza acciones que debes hacer tu. Cuenta como macro."
     }
   ]
 }

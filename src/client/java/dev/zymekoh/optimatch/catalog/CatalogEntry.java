@@ -15,7 +15,9 @@ import java.util.List;
  * @param fpsImpact rough frame-rate effect, -3 (heavy cost) to +3 (huge gain)
  * @param latencyImpact rough input-latency effect, -3 (adds delay) to +3 (removes a lot)
  * @param replaces  mod ids this one supersedes; running both is redundant
- * @param clashes   mod ids known to conflict at runtime
+ * @param clashes     mod ids known to conflict at runtime
+ * @param competitive whether a strong anticheat tolerates it
+ * @param competitiveNote why it carries that rating, shown to the player
  */
 public record CatalogEntry(
 	String modId,
@@ -28,8 +30,32 @@ public record CatalogEntry(
 	List<String> requires,
 	List<String> replaces,
 	List<String> clashes,
-	boolean desktopOnly
+	boolean desktopOnly,
+	Competitive competitive,
+	String competitiveNote
 ) {
+	/**
+	 * How a mod stands with the anticheats used on competitive servers.
+	 *
+	 * <p>Based on the published rules of the big networks: performance and cosmetic-only mods are
+	 * fine, while anything that automates an action, reveals hidden information, or changes the
+	 * camera is not. Hypixel names minimaps and freelook/perspective mods as disallowed outright.
+	 *
+	 * <p>This is guidance, not a guarantee — every server writes its own rules and the final
+	 * responsibility is the player's.
+	 */
+	public enum Competitive {
+		/** Nothing an anticheat objects to: performance, input fidelity, or your own information. */
+		ALLOWED,
+		/** Tolerated somewhere, banned elsewhere. Kept out of the competitive preset. */
+		RISKY,
+		/** Explicitly disallowed by the major networks. Never suggested for competitive play. */
+		BANNED
+	}
+	public boolean isCompetitiveSafe() {
+		return this.competitive == Competitive.ALLOWED;
+	}
+
 	public ModRole primaryRole() {
 		return this.roles.isEmpty() ? ModRole.LIBRARY : this.roles.get(0);
 	}
