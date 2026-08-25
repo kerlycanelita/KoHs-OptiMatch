@@ -20,6 +20,13 @@ public final class ConflictAnalyzer {
 	}
 
 	public static List<Conflict> analyze(List<MixinTarget> targets) {
+		return analyze(targets, java.util.Map.of());
+	}
+
+	/**
+	 * @param displayNames mod id to human name, so contenders read as "Sodium" rather than "sodium"
+	 */
+	public static List<Conflict> analyze(List<MixinTarget> targets, java.util.Map<String, String> displayNames) {
 		Map<String, List<MixinTarget>> grouped = new LinkedHashMap<>();
 		for (MixinTarget target : targets) {
 			String key = target.targetClass() + "#" + normalize(target.targetMethod());
@@ -28,7 +35,7 @@ public final class ConflictAnalyzer {
 
 		List<Conflict> conflicts = new ArrayList<>();
 		for (Map.Entry<String, List<MixinTarget>> entry : grouped.entrySet()) {
-			Conflict conflict = evaluate(entry.getValue());
+			Conflict conflict = evaluate(entry.getValue(), displayNames);
 			if (conflict != null) {
 				conflicts.add(conflict);
 			}
@@ -41,7 +48,7 @@ public final class ConflictAnalyzer {
 		return List.copyOf(conflicts);
 	}
 
-	private static Conflict evaluate(List<MixinTarget> group) {
+	private static Conflict evaluate(List<MixinTarget> group, java.util.Map<String, String> displayNames) {
 		Set<String> modIds = new LinkedHashSet<>();
 		for (MixinTarget target : group) {
 			modIds.add(target.modId());
@@ -86,9 +93,20 @@ public final class ConflictAnalyzer {
 			advice = "No hay que hacer nada.";
 		}
 
-		List<String> participants = new ArrayList<>();
+		// One contender per injection, keeping the priority so a winner can be predicted.
+		List<Conflict.Contender> contenders = new ArrayList<>();
+		Set<String> seen = new LinkedHashSet<>();
 		for (MixinTarget target : group) {
-			participants.add(target.modId() + "  " + target.kind().label() + "  (prioridad " + target.priority() + ")");
+			String key = target.modId() + "|" + target.kind() + "|" + target.mixinClass();
+			if (seen.add(key)) {
+				contenders.add(new Conflict.Contender(
+					target.modId(),
+					displayNames.getOrDefault(target.modId(), target.modId()),
+					target.kind(),
+					target.priority(),
+					target.mixinClass()
+				));
+			}
 		}
 
 		MixinTarget first = group.get(0);
@@ -97,7 +115,7 @@ public final class ConflictAnalyzer {
 			first.targetClass(),
 			normalize(first.targetMethod()),
 			List.copyOf(modIds),
-			List.copyOf(new LinkedHashSet<>(participants)),
+			List.copyOf(contenders),
 			level,
 			explanation,
 			advice

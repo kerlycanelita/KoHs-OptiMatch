@@ -6,24 +6,37 @@ import dev.zymekoh.optimatch.scan.ConflictAnalyzer;
 import dev.zymekoh.optimatch.scan.InstalledMod;
 import dev.zymekoh.optimatch.scan.MixinScanner;
 import dev.zymekoh.optimatch.scan.MixinTarget;
+import dev.zymekoh.optimatch.scan.ModScanner;
 import dev.zymekoh.optimatch.ui.Breakpoint;
 import dev.zymekoh.optimatch.ui.Draw;
 import dev.zymekoh.optimatch.ui.ModIcons;
 import dev.zymekoh.optimatch.ui.OptiTab;
 import dev.zymekoh.optimatch.ui.Theme;
-import dev.zymekoh.optimatch.scan.ModScanner;
+import dev.zymekoh.optimatch.ui.Tooltip;
+import dev.zymekoh.optimatch.ui.VersusBanner;
+import dev.zymekoh.optimatch.ui.dialog.ConflictDetailDialog;
+import dev.zymekoh.optimatch.ui.dialog.Dialog;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 /**
- * Tab 3 — which mods are racing each other over the same Minecraft methods, split into the ones
- * worth acting on and the ones that only look alarming.
+ * Tab 4 — which mods are racing each other over the same Minecraft methods.
+ *
+ * <p>A real two-mod collision is drawn as a head-to-head: both icons with a VS between them. Methods
+ * that several mods merely add code to get the plain treatment, because dressing that up as a fight
+ * would train the player to ignore the tab.
  */
 public final class ConflictsTab implements OptiTab {
+	private final Consumer<Dialog> dialogOpener;
+
 	private CompletableFuture<List<Conflict>> scan;
 	private List<Conflict> conflicts;
 	private int injectionCount;
@@ -35,6 +48,16 @@ public final class ConflictsTab implements OptiTab {
 	private int scroll;
 	private int maxScroll;
 	private Breakpoint breakpoint = Breakpoint.REGULAR;
+
+	/** Row rectangles, rebuilt each frame so clicks land on what is actually drawn. */
+	private final List<Hotspot> hotspots = new ArrayList<>();
+
+	private record Hotspot(int x, int y, int width, int height, Conflict conflict) {
+	}
+
+	public ConflictsTab(Consumer<Dialog> dialogOpener) {
+		this.dialogOpener = dialogOpener;
+	}
 
 	@Override
 	public Component title() {
@@ -57,7 +80,12 @@ public final class ConflictsTab implements OptiTab {
 			List<InstalledMod> mods = ModScanner.scan();
 			List<MixinTarget> targets = MixinScanner.scan(mods);
 			this.injectionCount = targets.size();
-			return ConflictAnalyzer.analyze(targets);
+
+			Map<String, String> names = new HashMap<>();
+			for (InstalledMod mod : mods) {
+				names.put(mod.id(), mod.displayName());
+			}
+			return ConflictAnalyzer.analyze(targets, names);
 		}).exceptionally(throwable -> {
 			OptiMatchClient.LOGGER.error("Conflict scan failed", throwable);
 			return List.of();
@@ -95,7 +123,7 @@ public final class ConflictsTab implements OptiTab {
 			return;
 		}
 
-		this.renderList(graphics, font, opacity);
+		this.renderList(graphics, font, mouseX, mouseY, now, opacity);
 	}
 
 	private void renderScanning(GuiGraphicsExtractor graphics, Font font, long now, float opacity) {
@@ -104,7 +132,6 @@ public final class ConflictsTab implements OptiTab {
 		graphics.centeredText(font, Component.literal("Leyendo los mixins de tus mods..."),
 			centerX, centerY - 10, Theme.withAlpha(Theme.TEXT_MUTED, opacity));
 
-		// Indeterminate sweep, since the work length is unknown until the jars are open.
 		int barWidth = Math.min(180, this.width - 40);
 		int barX = centerX - barWidth / 2;
 		Draw.roundedRect(graphics, barX, centerY + 4, barWidth, 4, 2, Theme.withAlpha(Theme.PANEL_RAISED, opacity));
@@ -112,7 +139,9 @@ public final class ConflictsTab implements OptiTab {
 		Draw.roundedRect(graphics, barX + sweep, centerY + 4, 40, 4, 2, Theme.withAlpha(Theme.ACCENT, opacity));
 	}
 
-	private void renderList(GuiGraphicsExtractor graphics, Font font, float opacity) {
+	private void renderList(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY, long now, float opacity) {
+		this.hotspots.clear();
+
 		int textX = this.x + 8;
 		int maxWidth = this.width - 16;
 
@@ -121,7 +150,6 @@ public final class ConflictsTab implements OptiTab {
 		int safe = this.conflicts.size() - critical - warning;
 
 		if (this.breakpoint.isCompact()) {
-			// No room for three labelled counters: collapse to a compact tally.
 			String tally = critical + " graves  " + warning + " vigilar  " + safe + " ok";
 			Draw.clippedText(graphics, font, tally, textX, this.y + 7, maxWidth,
 				Theme.withAlpha(critical > 0 ? Theme.DANGER : Theme.TEXT_MUTED, opacity), false);
@@ -140,30 +168,29 @@ public final class ConflictsTab implements OptiTab {
 
 		int cursorY = listTop - this.scroll;
 		for (Conflict conflict : this.conflicts) {
-			int cardHeight = 26 + conflict.participants().size() * 9;
+			boolean duel = conflict.isDuel();
+			int cardHeight = duel ? 42 : 26 + conflict.contenders().size() * 9;
 
 			if (cursorY + cardHeight >= listTop && cursorY <= listBottom) {
+				boolean hovered = Draw.inside(mouseX, mouseY, textX, cursorY, maxWidth, cardHeight - 3);
 				int accent = levelColor(conflict.level());
+
 				Draw.roundedRect(graphics, textX, cursorY, maxWidth, cardHeight - 3, 4,
-					Theme.withAlpha(Theme.PANEL_RAISED, opacity));
+					Theme.withAlpha(hovered ? Theme.PANEL_HOVER : Theme.PANEL_RAISED, opacity));
 				graphics.fill(textX, cursorY, textX + 2, cursorY + cardHeight - 3, Theme.withAlpha(accent, opacity));
 
-				Draw.clippedText(graphics, font, conflict.targetLabel(), textX + 7, cursorY + 4,
-					maxWidth - 80, Theme.withAlpha(Theme.TEXT, opacity), false);
-				String badge = conflict.level().label();
-				graphics.text(font, badge, textX + maxWidth - font.width(badge) - 6, cursorY + 4,
-					Theme.withAlpha(accent, opacity), false);
-
-				int lineY = cursorY + 15;
-				for (String participant : conflict.participants()) {
-					Draw.clippedText(graphics, font, participant, textX + 11, lineY, maxWidth - 16,
-						Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
-					lineY += 9;
+				if (duel) {
+					this.renderDuelRow(graphics, font, conflict, textX, cursorY, maxWidth, now, opacity);
+				} else {
+					this.renderPlainRow(graphics, font, conflict, textX, cursorY, maxWidth, accent, opacity);
 				}
-				Draw.clippedText(graphics, font, conflict.advice(), textX + 7, lineY,
-					maxWidth - 12, Theme.withAlpha(Theme.TEXT_MUTED, opacity * 0.9F), false);
-			}
 
+				if (hovered) {
+					Tooltip.request(conflict.targetLabel(),
+						conflict.explanation() + "  Pulsa para ver el detalle completo.", mouseX, mouseY);
+				}
+				this.hotspots.add(new Hotspot(textX, cursorY, maxWidth, cardHeight - 3, conflict));
+			}
 			cursorY += cardHeight + 5;
 		}
 
@@ -174,12 +201,78 @@ public final class ConflictsTab implements OptiTab {
 		this.scroll = Mth.clamp(this.scroll, 0, this.maxScroll);
 	}
 
+	/** Two mods genuinely colliding: icon, VS, icon, plus who is predicted to win. */
+	private void renderDuelRow(GuiGraphicsExtractor graphics, Font font, Conflict conflict,
+							   int x, int y, int maxWidth, long now, float opacity) {
+		Conflict.Contender left = conflict.contenders().get(0);
+		Conflict.Contender right = conflict.contenders().get(1);
+
+		int iconSize = 16;
+		int versusWidth = VersusBanner.inlineWidth(iconSize);
+		VersusBanner.renderInline(graphics, font, x + 7, y + 5, iconSize, left, right, now, opacity);
+
+		int textX = x + 7 + versusWidth + 8;
+		int textWidth = Math.max(30, maxWidth - (textX - x) - 70);
+
+		Draw.clippedText(graphics, font, conflict.targetLabel(), textX, y + 4, textWidth,
+			Theme.withAlpha(Theme.TEXT, opacity), false);
+		Draw.clippedText(graphics, font, left.kind().label() + "  contra  " + right.kind().label(),
+			textX, y + 14, textWidth, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
+
+		// The verdict is the point of the row, so it gets its own line in colour.
+		String verdict;
+		int verdictColor;
+		if (conflict.isTie()) {
+			verdict = "Empate de prioridad: ganador impredecible";
+			verdictColor = Theme.DANGER;
+		} else {
+			Conflict.Contender winner = conflict.predictedWinner();
+			verdict = winner != null ? "Gana " + winner.displayName() : "Conviven sin pisarse";
+			verdictColor = winner != null ? Theme.WARN : Theme.GOOD;
+		}
+		Draw.clippedText(graphics, font, verdict, textX, y + 24, textWidth,
+			Theme.withAlpha(verdictColor, opacity), false);
+
+		String badge = conflict.level().label();
+		graphics.text(font, badge, x + maxWidth - font.width(badge) - 6, y + 4,
+			Theme.withAlpha(levelColor(conflict.level()), opacity), false);
+	}
+
+	/** Three or more mods, or a purely additive overlap: the plain list. */
+	private void renderPlainRow(GuiGraphicsExtractor graphics, Font font, Conflict conflict,
+								int x, int y, int maxWidth, int accent, float opacity) {
+		Draw.clippedText(graphics, font, conflict.targetLabel(), x + 7, y + 4, maxWidth - 80,
+			Theme.withAlpha(Theme.TEXT, opacity), false);
+		String badge = conflict.level().label();
+		graphics.text(font, badge, x + maxWidth - font.width(badge) - 6, y + 4,
+			Theme.withAlpha(accent, opacity), false);
+
+		int lineY = y + 15;
+		for (Conflict.Contender contender : conflict.contenders()) {
+			Draw.clippedText(graphics, font,
+				contender.displayName() + "  " + contender.kind().label() + "  (prioridad " + contender.priority() + ")",
+				x + 11, lineY, maxWidth - 16, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
+			lineY += 9;
+		}
+	}
+
 	private static int levelColor(Conflict.Level level) {
 		return switch (level) {
 			case CRITICAL -> Theme.DANGER;
 			case WARNING -> Theme.WARN;
 			case SAFE -> Theme.GOOD;
 		};
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		for (Hotspot hotspot : this.hotspots) {
+			if (Draw.inside(mouseX, mouseY, hotspot.x(), hotspot.y(), hotspot.width(), hotspot.height())) {
+				this.dialogOpener.accept(new ConflictDetailDialog(hotspot.conflict()));
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
