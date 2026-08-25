@@ -68,7 +68,7 @@ public final class OptiMatchScreen extends Screen {
 			new ForYouTab(this::openDialog),
 			new ModsSearchTab(this::openDialog),
 			new ConflictsTab(),
-			new ProfilesTab()
+			new ProfilesTab(this::openDialog)
 		};
 	}
 
