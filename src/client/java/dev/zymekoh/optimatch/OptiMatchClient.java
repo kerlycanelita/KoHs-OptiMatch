@@ -34,7 +34,10 @@ public final class OptiMatchClient implements ClientModInitializer {
 			}
 			if (client.screen instanceof TitleScreen titleScreen) {
 				shownThisLaunch = true;
-				client.setScreen(new OptiMatchScreen(titleScreen));
+				// The player's answer to the first-run question decides whether we greet them at all.
+				if (dev.zymekoh.optimatch.config.OptiMatchSettings.showOnStartup()) {
+					client.setScreen(new OptiMatchScreen(titleScreen));
+				}
 			}
 		});
 

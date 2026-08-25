@@ -1,7 +1,9 @@
 package dev.zymekoh.optimatch.ui;
 
+import dev.zymekoh.optimatch.config.OptiMatchSettings;
 import dev.zymekoh.optimatch.install.PendingChanges;
 import dev.zymekoh.optimatch.ui.dialog.Dialog;
+import dev.zymekoh.optimatch.ui.dialog.StartupPromptDialog;
 import dev.zymekoh.optimatch.ui.tab.ConflictsTab;
 import dev.zymekoh.optimatch.ui.tab.ForYouTab;
 import dev.zymekoh.optimatch.ui.tab.InstalledModsTab;
@@ -14,6 +16,7 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
 
@@ -28,6 +31,17 @@ public final class OptiMatchScreen extends Screen {
 	private static final long INTRO_MILLIS = 620L;
 	private static final int LIFT_PIXELS = 26;
 
+	/** How long the loading sequence holds before the console appears. */
+	private static final long LOADING_MILLIS = 3000L;
+
+	/** Phrases cycled through while loading, so the wait shows what is actually happening. */
+	private static final String[] LOADING_STEPS = {
+		"Leyendo tus mods...",
+		"Analizando tu equipo...",
+		"Buscando conflictos de mixins...",
+		"Listo"
+	};
+
 	private final Screen parent;
 	private final OptiTab[] tabs;
 	private ParticleField particles;
@@ -37,6 +51,9 @@ public final class OptiMatchScreen extends Screen {
 	private Breakpoint breakpoint = Breakpoint.REGULAR;
 
 	private long openedAt;
+	/** Start of the loading sequence; the console only appears once it finishes. */
+	private long loadingStartedAt;
+	private boolean promptShown;
 	private int activeTab;
 	private boolean confirmingQuit;
 	/** When the current tab was selected, for the content cross-fade. */
@@ -74,7 +91,10 @@ public final class OptiMatchScreen extends Screen {
 
 	@Override
 	protected void init() {
-		if (this.openedAt == 0L) {
+		if (this.loadingStartedAt == 0L) {
+			this.loadingStartedAt = Util.getMillis();
+		}
+		if (this.openedAt == 0L && !this.isLoading()) {
 			this.openedAt = Util.getMillis();
 			this.tabChangedAt = this.openedAt;
 			this.tabs[this.activeTab].onSelected();
@@ -126,7 +146,18 @@ public final class OptiMatchScreen extends Screen {
 		}
 	}
 
+	private boolean isLoading() {
+		return Util.getMillis() - this.loadingStartedAt < LOADING_MILLIS;
+	}
+
+	private float loadingProgress() {
+		return Mth.clamp((Util.getMillis() - this.loadingStartedAt) / (float) LOADING_MILLIS, 0.0F, 1.0F);
+	}
+
 	private float introProgress() {
+		if (this.openedAt == 0L) {
+			return 0.0F;
+		}
 		return Draw.easeOut((Util.getMillis() - this.openedAt) / (float) INTRO_MILLIS);
 	}
 
@@ -165,6 +196,25 @@ public final class OptiMatchScreen extends Screen {
 		graphics.pose().pushMatrix();
 		graphics.pose().scale(this.ui.factor());
 
+		if (this.isLoading()) {
+			// Particles run at full strength here: they are the backdrop of the loading screen.
+			this.particles.render(graphics, this.ui.width(), this.ui.height(), now, 1.0F);
+			this.drawLoading(graphics, now);
+			Tooltip.renderPending(graphics, this.font, this.ui.width(), this.ui.height(), 1.0F);
+			graphics.pose().popMatrix();
+			super.extractRenderState(graphics, mouseX, mouseY, deltaTicks);
+			return;
+		}
+
+		// First frame after loading: bring the console in, and ask the one-off question.
+		if (this.openedAt == 0L) {
+			this.init();
+		}
+		if (!this.promptShown && !OptiMatchSettings.startupPromptAnswered()) {
+			this.promptShown = true;
+			this.openDialog(new StartupPromptDialog());
+		}
+
 		this.particles.render(graphics, this.ui.width(), this.ui.height(), now, progress);
 
 		Draw.panel(graphics, this.frameX, top, this.frameWidth, this.frameHeight, 9,
@@ -197,6 +247,32 @@ public final class OptiMatchScreen extends Screen {
 		graphics.pose().popMatrix();
 
 		super.extractRenderState(graphics, mouseX, mouseY, deltaTicks);
+	}
+
+	/** The three-second welcome: mascot, spinner, and what the tool is busy with. */
+	private void drawLoading(GuiGraphicsExtractor graphics, long now) {
+		int centerX = this.ui.width() / 2;
+		int centerY = this.ui.height() / 2;
+
+		// Fade the whole sequence out over its last third so it hands over smoothly.
+		float progress = this.loadingProgress();
+		float fade = progress > 0.7F ? 1.0F - (progress - 0.7F) / 0.3F : 1.0F;
+
+		Spinner.halo(graphics, centerX, centerY - 6, 34, now, fade);
+		Spinner.indeterminate(graphics, centerX, centerY - 6, 30, now, fade);
+		Spinner.progress(graphics, centerX, centerY - 6, 38, progress, fade * 0.9F);
+
+		// The mascot paces along the middle of the ring.
+		int walkWidth = 44;
+		Mascot.renderWalking(graphics, centerX - walkWidth / 2, centerY + 6, walkWidth, 1, now, fade);
+
+		graphics.centeredText(this.font, "KoHs OptiMatch", centerX, centerY + 30,
+			Theme.withAlpha(Theme.ACCENT_BRIGHT, fade));
+
+		// Step text tracks real progress rather than being decorative.
+		int step = Math.min(LOADING_STEPS.length - 1, (int) (progress * LOADING_STEPS.length));
+		graphics.centeredText(this.font, LOADING_STEPS[step], centerX, centerY + 42,
+			Theme.withAlpha(Theme.TEXT_MUTED, fade));
 	}
 
 	private void drawHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, long now, float progress, int frameTop) {
@@ -302,8 +378,8 @@ public final class OptiMatchScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() != 0) {
-			return super.mouseClicked(event, doubleClick);
+		if (this.isLoading() || event.button() != 0) {
+			return true;
 		}
 
 		double mouseX = this.ui.toVirtual(event.x());
@@ -366,6 +442,9 @@ public final class OptiMatchScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(KeyEvent event) {
+		if (this.isLoading()) {
+			return true;
+		}
 		int key = event.key();
 
 		if (this.dialog != null) {
