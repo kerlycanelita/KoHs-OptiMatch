@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "${mod_id}",
+	"version": "${version}",
+	"name": "${mod_name}",
+	"description": "Selector inteligente de mods: analiza tus mods instalados, tu hardware y las carreras de mixins entre mods, y recomienda combinaciones para FPS, latencia o PvP. No usa ningun mixin propio.",
+	"authors": [
+		"KoH"
+	],
+	"contact": {
+		"homepage": "https://modrinth.com/",
+		"sources": "https://github.com/KoH/KoHs-OptiMatch"
+	},
+	"license": "MIT",
+	"icon": "assets/kohs_optimatch/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.zymekoh.optimatch.OptiMatchClient"
+		],
+		"modmenu": [
+			"dev.zymekoh.optimatch.integration.ModMenuIntegration"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

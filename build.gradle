@@ -1,0 +1,79 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+version = "${project.mod_version}+mc${project.minecraft_version}"
+group = project.maven_group
+
+base {
+	archivesName = project.mod_id
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = 'Terraformers'
+		url = 'https://maven.terraformersmc.com/releases/'
+	}
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"${project.mod_id}" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Fabric Loader ships ASM at runtime, so we only need it to compile the mixin scanner.
+	compileOnly "org.ow2.asm:asm:${project.asm_version}"
+	compileOnly "org.ow2.asm:asm-tree:${project.asm_version}"
+
+	// Optional Mod Menu entry point.
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+def resourceProperties = [
+	'version'          : project.version,
+	'mod_id'           : project.mod_id,
+	'mod_name'         : project.mod_name,
+	'minecraft_version': project.minecraft_version,
+	'loader_version'   : project.loader_version
+]
+
+processResources {
+	inputs.properties resourceProperties
+	filesMatching('fabric.mod.json') {
+		expand resourceProperties
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 25
+	options.encoding = 'UTF-8'
+}
+
+java {
+	withSourcesJar()
+	// Minecraft 26.1 requires Java 25. Resolving it as a toolchain means the build works even when
+	// JAVA_HOME still points at an older JDK, instead of failing with "release version 25 not supported".
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+jar {
+	from('LICENSE') {
+		rename { "${it}_${project.mod_id}" }
+	}
+}

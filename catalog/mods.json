@@ -1,0 +1,411 @@
+{
+  "schemaVersion": 1,
+  "_comment": [
+    "Catalogo publicado de KoHs OptiMatch.",
+    "El mod lo descarga al arrancar y lo cachea con ETag, asi que editar ESTE archivo",
+    "actualiza los datos de rendimiento de todos los jugadores sin publicar un mod nuevo.",
+    "Reglas: subir schemaVersion solo en cambios incompatibles; 'entries' nunca puede quedar vacio",
+    "(el cliente rechaza un catalogo vacio y sigue con el que ya tenia)."
+  ],
+  "entries": [
+    {
+      "modId": "sodium",
+      "slug": "sodium",
+      "name": "Sodium",
+      "roles": [
+        "FPS",
+        "LATENCY"
+      ],
+      "summary": "Reescribe por completo el motor de renderizado. Es la mayor subida de FPS que existe y, al bajar el frametime, tambien reduce la latencia visual.",
+      "fpsImpact": 3,
+      "latencyImpact": 2
+    },
+    {
+      "modId": "raw_input_buffer",
+      "slug": "raw-input-buffer",
+      "name": "Raw Input Buffer",
+      "roles": [
+        "LATENCY"
+      ],
+      "summary": "Reduce el input lag y las caidas de FPS causadas por el sondeo del raton. Es de lo mas directo que hay contra el retardo de mouse.",
+      "fpsImpact": 1,
+      "latencyImpact": 3
+    },
+    {
+      "modId": "ixeris",
+      "slug": "ixeris",
+      "name": "Ixeris",
+      "roles": [
+        "LATENCY",
+        "FPS"
+      ],
+      "summary": "Entrada cruda con buffer y sondeo de eventos en un hilo aparte. Desacopla tu raton y teclado del hilo principal del juego.",
+      "fpsImpact": 1,
+      "latencyImpact": 3
+    },
+    {
+      "modId": "no_input_lag_tick_rate",
+      "slug": "no-input-lag-tick-rate",
+      "name": "No Input Lag Tick Rate",
+      "roles": [
+        "LATENCY",
+        "TICK"
+      ],
+      "summary": "Permite bajar el tick rate sin que suba la latencia de entrada.",
+      "fpsImpact": 1,
+      "latencyImpact": 2
+    },
+    {
+      "modId": "lithium",
+      "slug": "lithium",
+      "name": "Lithium",
+      "roles": [
+        "TICK",
+        "FPS"
+      ],
+      "summary": "Optimiza la logica del juego (fisicas, IA de entidades, redstone) sin cambiar comportamiento. Elimina tirones en mundos cargados.",
+      "fpsImpact": 1,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "ferritecore",
+      "slug": "ferrite-core",
+      "name": "FerriteCore",
+      "roles": [
+        "MEMORY"
+      ],
+      "summary": "Reduce mucho el uso de RAM cambiando como se almacenan los estados de bloque. Clave con 4-8 GB o en Pojav.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "immediatelyfast",
+      "slug": "immediatelyfast",
+      "name": "ImmediatelyFast",
+      "roles": [
+        "FPS",
+        "LATENCY"
+      ],
+      "summary": "Acelera el renderizado inmediato: HUD, inventarios, texto y entidades. Se nota sobre todo al abrir cofres e inventarios.",
+      "fpsImpact": 2,
+      "latencyImpact": 2
+    },
+    {
+      "modId": "badoptimizations",
+      "slug": "badoptimizations",
+      "name": "BadOptimizations",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Conjunto de optimizaciones pequenas que suman: cache de iluminacion, menos trabajo por frame y arranque mas rapido.",
+      "fpsImpact": 2,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "entityculling",
+      "slug": "entityculling",
+      "name": "Entity Culling",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Deja de renderizar entidades y cofres que no ves. Gran ganancia en granjas y bases llenas de mobs.",
+      "fpsImpact": 2,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "packetfixer",
+      "slug": "packet-fixer",
+      "name": "Packet Fixer",
+      "roles": [
+        "NETWORK",
+        "LATENCY"
+      ],
+      "summary": "Corrige y agiliza el manejo de paquetes grandes. Evita desconexiones y cortes en servidores cargados.",
+      "fpsImpact": 0,
+      "latencyImpact": 2
+    },
+    {
+      "modId": "krypton",
+      "slug": "krypton",
+      "name": "Krypton",
+      "roles": [
+        "NETWORK",
+        "LATENCY"
+      ],
+      "summary": "Optimiza la pila de red. En servidores baja el retardo percibido de golpes y movimiento.",
+      "fpsImpact": 0,
+      "latencyImpact": 2
+    },
+    {
+      "modId": "fast_ip_ping",
+      "slug": "fast-ip-ping",
+      "name": "Fast IP Ping",
+      "roles": [
+        "NETWORK"
+      ],
+      "summary": "Acelera la resolucion de direcciones al conectar. Entras al servidor antes.",
+      "fpsImpact": 0,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "moreculling",
+      "slug": "moreculling",
+      "name": "More Culling",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Amplia el descarte de caras de bloques ocultas. Suma bien encima de Sodium.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "cullleaves",
+      "slug": "cull-leaves",
+      "name": "Cull Leaves",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Descarta caras internas de las hojas. Ganancia clara en biomas de bosque y jungla.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "leavesbegone",
+      "slug": "leaves-be-gone",
+      "name": "Leaves Be Gone",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Simplifica el renderizado de hojas. Util en equipos modestos y en Pojav.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "betterblockentities",
+      "slug": "better-block-entities",
+      "name": "Better Block Entities",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Convierte cofres, camas y estanterias en modelos normales en vez de entidades de bloque. Sube FPS en zonas con muchos cofres.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "particlecore",
+      "slug": "particle-core",
+      "name": "Particle Core",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Optimiza el sistema de particulas y permite recortar las que no aportan. Ayuda mucho en peleas con muchos efectos.",
+      "fpsImpact": 1,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "scalablelux",
+      "slug": "scalablelux",
+      "name": "ScalableLux",
+      "roles": [
+        "FPS",
+        "TICK"
+      ],
+      "summary": "Motor de iluminacion en hilos aparte. Quita los tirones al generar o cargar chunks.",
+      "fpsImpact": 1,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "chloride",
+      "slug": "chloride",
+      "name": "Chloride",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Complemento de Sodium con optimizaciones extra de renderizado.",
+      "fpsImpact": 1,
+      "latencyImpact": 0,
+      "requires": [
+        "sodium"
+      ]
+    },
+    {
+      "modId": "lmd",
+      "slug": "lmd",
+      "name": "Let Me Despawn",
+      "roles": [
+        "TICK",
+        "FPS"
+      ],
+      "summary": "Ajusta el despawn de mobs para que no se acumulen. Menos entidades, mas TPS y mas FPS.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "alternate-current",
+      "slug": "alternate-current",
+      "name": "Alternate Current",
+      "roles": [
+        "TICK"
+      ],
+      "summary": "Reimplementa el calculo de redstone. Elimina los tirones en granjas y maquinas grandes.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "ksyxis",
+      "slug": "ksyxis",
+      "name": "Ksyxis",
+      "roles": [
+        "MEMORY"
+      ],
+      "summary": "Acelera muchisimo la carga de mundos saltandose chunks innecesarios al entrar.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "languagereload",
+      "slug": "language-reload",
+      "name": "Language Reload",
+      "roles": [
+        "MEMORY"
+      ],
+      "summary": "Carga de idiomas mas rapida y con menos memoria. Reduce el tiempo de arranque.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "mousetweaks",
+      "slug": "mouse-tweaks",
+      "name": "Mouse Tweaks",
+      "roles": [
+        "PVP",
+        "LATENCY"
+      ],
+      "summary": "Arrastrar, repartir y mover pilas en el inventario con el raton. Menos clics y menos tiempo con el inventario abierto.",
+      "fpsImpact": 0,
+      "latencyImpact": 1
+    },
+    {
+      "modId": "debugify",
+      "slug": "debugify",
+      "name": "Debugify",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Aplica correcciones de bugs de Mojang ya reportados. Algunos afectan a hitboxes y sonido, utiles en PvP.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "betterf3",
+      "slug": "betterf3",
+      "name": "BetterF3",
+      "roles": [
+        "PVP"
+      ],
+      "summary": "Reemplaza la pantalla de depuracion por una configurable y legible. Util para vigilar FPS y latencia en directo.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "sodium_extra",
+      "slug": "sodium-extra",
+      "name": "Sodium Extra",
+      "roles": [
+        "FPS",
+        "VISUAL"
+      ],
+      "summary": "Anade opciones extra a Sodium: control de niebla, nubes, particulas y animaciones. Permite recortar lo que no aporta.",
+      "fpsImpact": 1,
+      "latencyImpact": 0,
+      "requires": [
+        "sodium"
+      ]
+    },
+    {
+      "modId": "dynamic_fps",
+      "slug": "dynamic-fps",
+      "name": "Dynamic FPS",
+      "roles": [
+        "FPS",
+        "MEMORY"
+      ],
+      "summary": "Baja los FPS cuando la ventana no tiene el foco. Ahorra bateria y calor, pero no aporta nada mientras juegas.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "exordium",
+      "slug": "exordium",
+      "name": "Exordium",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Limita a cuantos fotogramas se redibuja el HUD y los inventarios. Sube FPS, pero ANADE retardo visible a la interfaz: mala idea para PvP.",
+      "fpsImpact": 2,
+      "latencyImpact": -2
+    },
+    {
+      "modId": "nvidium",
+      "slug": "nvidium",
+      "name": "Nvidium",
+      "roles": [
+        "FPS"
+      ],
+      "summary": "Renderizador con mesh shaders exclusivo de GPUs NVIDIA RTX. Subida enorme de FPS con distancias de vision altas. Requiere Sodium.",
+      "fpsImpact": 3,
+      "latencyImpact": 1,
+      "requires": [
+        "sodium"
+      ],
+      "desktopOnly": true
+    },
+    {
+      "modId": "c2me",
+      "slug": "c2me-fabric",
+      "name": "C2ME",
+      "roles": [
+        "TICK"
+      ],
+      "summary": "Generacion y carga de chunks en paralelo. Ayuda al explorar, pero es la parte mas delicada: usalo con cuidado.",
+      "fpsImpact": 1,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "iris",
+      "slug": "iris",
+      "name": "Iris Shaders",
+      "roles": [
+        "VISUAL"
+      ],
+      "summary": "Soporte de shaders sobre Sodium. Se ve espectacular pero cuesta FPS y anade latencia de render.",
+      "fpsImpact": -2,
+      "latencyImpact": -1,
+      "requires": [
+        "sodium"
+      ]
+    },
+    {
+      "modId": "modmenu",
+      "slug": "modmenu",
+      "name": "Mod Menu",
+      "roles": [
+        "LIBRARY"
+      ],
+      "summary": "Anade la lista de mods y sus ajustes al menu principal.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    },
+    {
+      "modId": "cloth-config",
+      "slug": "cloth-config",
+      "name": "Cloth Config API",
+      "roles": [
+        "LIBRARY"
+      ],
+      "summary": "Libreria de pantallas de configuracion que usan muchos mods.",
+      "fpsImpact": 0,
+      "latencyImpact": 0
+    }
+  ]
+}
