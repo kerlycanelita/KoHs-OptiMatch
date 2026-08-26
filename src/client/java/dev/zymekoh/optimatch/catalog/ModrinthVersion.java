@@ -7,6 +7,7 @@ import java.util.List;
  * Fabric loader. Nothing is ever offered to the player without one of these behind it.
  *
  * @param sha512      hash of the primary file, verified after download
+ * @param datePublished ISO-8601 timestamp from Modrinth; the only reliable way to order builds
  * @param requiredDependencies Modrinth project ids that must also be installed
  */
 public record ModrinthVersion(
@@ -18,6 +19,7 @@ public record ModrinthVersion(
 	String sha512,
 	long fileSize,
 	String gameVersion,
+	String datePublished,
 	List<String> requiredDependencies
 ) {
 	/**

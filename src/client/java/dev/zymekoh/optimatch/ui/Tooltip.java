@@ -20,10 +20,27 @@ public final class Tooltip {
 	private static String pendingBody;
 	private static int pendingX;
 	private static int pendingY;
-	/** Frame the request was made on, so one that is never consumed cannot linger. */
-	private static long requestedAt;
+	/** Counter bumped once per frame; a request is only valid for the frame that made it. */
+	private static long frame;
+	/** Frame the pending request was made on. */
+	private static long requestedFrame = -1L;
 
 	private Tooltip() {
+	}
+
+	/**
+	 * Opens a new frame. Call once, before anything draws.
+	 *
+	 * <p>This is what makes a leftover hint impossible rather than unlikely. Tooltips used to be
+	 * dropped by hand at each place a layer changed, and that only works if every such place
+	 * remembers to do it — one early return that skipped the cleanup was enough to carry a hint from
+	 * a screen the player had already left into the next one. Now a request is stamped with the
+	 * frame it belongs to and simply cannot be painted on any other.
+	 */
+	public static void beginFrame() {
+		frame++;
+		pendingTitle = null;
+		pendingBody = null;
 	}
 
 	/** Requests a tooltip for this frame. The last caller wins, which matches hover semantics. */
@@ -32,7 +49,7 @@ public final class Tooltip {
 		pendingBody = body;
 		pendingX = x;
 		pendingY = y;
-		requestedAt = net.minecraft.util.Util.getMillis();
+		requestedFrame = frame;
 	}
 
 	/** Convenience for a hover test: only requests when the cursor is inside the rectangle. */
@@ -51,12 +68,9 @@ public final class Tooltip {
 	/** Paints whatever was requested this frame. Call last, inside the canvas transform. */
 	public static void renderPending(GuiGraphicsExtractor graphics, Font font, int canvasWidth, int canvasHeight,
 									 float opacity) {
-		if (pendingTitle == null || opacity <= 0.05F) {
-			return;
-		}
-		// A request older than a couple of frames means whoever made it stopped drawing. Painting it
-		// would show a hint for something no longer on screen.
-		if (net.minecraft.util.Util.getMillis() - requestedAt > 120L) {
+		// Every exit clears. A path that returns while leaving a request pending is exactly how a
+		// hint outlives its screen, so there is no such path.
+		if (pendingTitle == null || requestedFrame != frame || opacity <= 0.05F) {
 			clear();
 			return;
 		}

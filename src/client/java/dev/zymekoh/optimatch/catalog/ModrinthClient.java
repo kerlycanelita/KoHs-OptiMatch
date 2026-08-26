@@ -153,10 +153,17 @@ public final class ModrinthClient {
 					"No hay archivo descargable de " + slug + " para Minecraft " + target + ".");
 			}
 
-			// Most trustworthy channel first, then the newest build within it.
+			// Newest build first, and newest means most recently published.
+			//
+			// It used to mean "highest version_number sorted as text", which is wrong in a way that
+			// bites exactly when it matters: lexicographically "0.9.9" sorts after "0.9.10", so the
+			// newer build lost and the player was handed a stale jar that Mod Menu then flagged as
+			// out of date. Channel is deliberately no longer part of the ordering — every candidate
+			// here already targets this Minecraft, and preferring an older stable over a newer beta
+			// reintroduces the same complaint. The channel is shown in the UI instead.
 			candidates.sort(Comparator
-				.comparingInt((ModrinthVersion version) -> version.channel().rank())
-				.thenComparing(ModrinthVersion::versionNumber, Comparator.reverseOrder()));
+				.comparing(ModrinthVersion::datePublished, Comparator.reverseOrder())
+				.thenComparingInt(version -> version.channel().rank()));
 
 			ModrinthVersion best = candidates.get(0);
 			return new Availability(Availability.Status.COMPATIBLE, best,
@@ -231,6 +238,9 @@ public final class ModrinthClient {
 			sha512,
 			chosen.has("size") ? chosen.get("size").getAsLong() : 0L,
 			target,
+			version.has("date_published") && !version.get("date_published").isJsonNull()
+				? version.get("date_published").getAsString()
+				: "",
 			List.copyOf(required)
 		);
 	}

@@ -20,6 +20,7 @@ Para **Minecraft 26.1.2 / Fabric**.
 | **Mods** | Buscador de todo Modrinth, filtrado a builds reales para tu versión. |
 | **Conflictos** | Qué mods se pelean por el mismo método, con el detalle leído del bytecode. |
 | **Diagnóstico** | Lo que está roto en silencio: mixins que ya no aplican, mods desactualizados, memoria mal dimensionada. |
+| **Taller de mixins** | Los mixins de todos tus mods, y los que puedes mover. Presets, empezando por **Ultra Mini Latencia**. |
 | **Perfiles** | Guarda tu setup completo —mods y configuraciones— para volver a él. |
 
 ---
@@ -50,6 +51,32 @@ muertas en Sodium y 1 en Fabric Permission API.
 Un `@Redirect` reclama **una instrucción**, no el método entero. Dos mods redirigiendo llamadas
 distintas dentro del mismo método no se pisan. Comparando el `@At` de cada inyección se evita el ruido
 que haría ignorar la pestaña. Medido: 822 inyecciones, 44 métodos compartidos, **0 conflictos reales**.
+
+---
+
+## Sobre el Taller de mixins
+
+**Ver es universal. Cambiar no.** Y la diferencia está medida, no supuesta.
+
+Recorrer los configs que Mixin tiene preparados lista **todos** los mixins de **todos** los mods,
+coopere el mod o no. En una instancia de prueba: 71 configs, 600 mixins.
+
+Cambiarlos es otra historia. Lo intenté por la vía directa —vaciar la lista de un config ya
+preparado en `preLaunch`— y **no funciona**: ModMenu quedó con sus inyecciones aplicadas igual. El
+objeto que se muta no es el que Mixin consulta al transformar. Así que el Taller solo escribe donde
+el mod acepta que se le escriba:
+
+| Mecanismo | Quién lo usa | Dónde escribe |
+|---|---|---|
+| Reglas de paquete | Sodium | `config/sodium-mixins.properties` |
+| Opciones booleanas | ImmediatelyFast | `config/immediatelyfast.json` |
+| **Ninguno** | los demás | no se puede, y se dice |
+
+Lo que separa a unos de otros es declarar un `IMixinConfigPlugin`. Un mod que no lo declara aparece
+en la lista con sus mixins y un candado, porque escribir cambios que en silencio no hacen nada es
+peor que un no honesto.
+
+Los cambios entran **al reiniciar**, que es cuando cada mod lee su archivo.
 
 ---
 

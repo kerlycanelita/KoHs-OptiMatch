@@ -16,6 +16,9 @@
 	"icon": "assets/kohs_optimatch/icon.png",
 	"environment": "client",
 	"entrypoints": {
+		"preLaunch": [
+			"dev.zymekoh.optimatch.transform.MixinInventory"
+		],
 		"client": [
 			"dev.zymekoh.optimatch.OptiMatchClient"
 		],

@@ -10,6 +10,7 @@ import dev.zymekoh.optimatch.ui.tab.HealthTab;
 import dev.zymekoh.optimatch.ui.tab.InstalledModsTab;
 import dev.zymekoh.optimatch.ui.tab.ModsSearchTab;
 import dev.zymekoh.optimatch.ui.tab.ProfilesTab;
+import dev.zymekoh.optimatch.ui.tab.TransformTab;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -87,6 +88,7 @@ public final class OptiMatchScreen extends Screen {
 			new ModsSearchTab(this::openDialog),
 			new ConflictsTab(this::openDialog),
 			new HealthTab(),
+			new TransformTab(this::openDialog),
 			new ProfilesTab(this::openDialog)
 		};
 	}
@@ -192,6 +194,8 @@ public final class OptiMatchScreen extends Screen {
 
 		int virtualMouseX = this.ui.toVirtual(mouseX);
 		int virtualMouseY = this.ui.toVirtual(mouseY);
+		// Anything requested last frame dies here, whichever layer asked for it.
+		Tooltip.beginFrame();
 		int lift = this.liftOffset();
 		int top = this.frameY + lift;
 
@@ -537,6 +541,21 @@ public final class OptiMatchScreen extends Screen {
 			Tooltip.clear();
 			this.tabs[index].onSelected();
 		}
+	}
+
+	/**
+	 * Hands back everything the selector was holding.
+	 *
+	 * <p>Mod icons are uploaded as textures and nothing outside this screen ever draws them, so
+	 * keeping them resident would spend video memory for the whole play session on a window the
+	 * player sees once at startup. Re-opening reloads them, which costs a few milliseconds exactly
+	 * when the player is not doing anything else.
+	 */
+	@Override
+	public void removed() {
+		ModIcons.clear(this.minecraft);
+		Tooltip.clear();
+		super.removed();
 	}
 
 	@Override

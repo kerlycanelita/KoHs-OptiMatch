@@ -8,7 +8,12 @@ import dev.zymekoh.optimatch.hardware.HardwareProfile;
 import dev.zymekoh.optimatch.hardware.HardwareScanner;
 import java.util.ArrayList;
 import java.util.Comparator;
+import dev.zymekoh.optimatch.transform.KnobRegistry;
+import dev.zymekoh.optimatch.transform.MixinInventory;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +74,7 @@ public final class HealthCheck {
 		findings.addAll(brokenMixins(targets, mods));
 		findings.addAll(memoryAdvice());
 		findings.addAll(redundantMods(userMods));
+		findings.addAll(mixinPressure());
 
 		boolean updatesChecked = false;
 		if (checkUpdates) {
@@ -84,6 +90,57 @@ public final class HealthCheck {
 
 		findings.sort(Comparator.comparingInt(finding -> finding.severity().ordinal()));
 		return new Report(List.copyOf(findings), userMods.size(), targets.size(), updatesChecked);
+	}
+
+	/**
+	 * The class the most different mods are all writing into.
+	 *
+	 * <p>Reported as one finding rather than one per class. Plenty of classes carry injections from
+	 * two mods and that is ordinary; naming every one of them would bury the single case that is
+	 * actually crowded. This says where the pressure is highest and stops.
+	 */
+	private static List<Finding> mixinPressure() {
+		List<MixinInventory.Config> configs = MixinInventory.configs();
+		if (configs.isEmpty()) {
+			return List.of();
+		}
+
+		Map<String, Set<String>> ownersByTarget = new LinkedHashMap<>();
+		for (MixinInventory.Config config : configs) {
+			String owner = KnobRegistry.ownerOf(config.name());
+			for (MixinInventory.Mixin mixin : config.mixins()) {
+				for (String target : mixin.targets()) {
+					ownersByTarget.computeIfAbsent(target, key -> new LinkedHashSet<>()).add(owner);
+				}
+			}
+		}
+
+		String busiest = null;
+		Set<String> busiestOwners = Set.of();
+		for (Map.Entry<String, Set<String>> entry : ownersByTarget.entrySet()) {
+			if (entry.getValue().size() > busiestOwners.size()) {
+				busiest = entry.getKey();
+				busiestOwners = entry.getValue();
+			}
+		}
+
+		List<Finding> findings = new ArrayList<>();
+		if (busiest != null && busiestOwners.size() >= 3) {
+			String plain = busiest.substring(busiest.lastIndexOf('/') + 1);
+			findings.add(new Finding(Severity.INFO, plain + ": " + busiestOwners.size() + " mods dentro",
+				String.join(", ", busiestOwners) + " inyectan todos en esta clase. No es un conflicto "
+					+ "por si mismo, pero es donde mas probable es que uno pise a otro.",
+				"Mira la pestana Conflictos para ver si alguno choca de verdad.", ""));
+		}
+
+		long locked = KnobRegistry.locked().size();
+		if (locked > 0) {
+			findings.add(new Finding(Severity.INFO, locked + " configs no se pueden ajustar",
+				"Estos mods no publican un IMixinConfigPlugin, el enganche que permite apagar partes "
+					+ "sueltas. Se ven en el Taller, pero solo se pueden quitar enteros.",
+				"Pestana Taller de mixins.", ""));
+		}
+		return findings;
 	}
 
 	/**
@@ -238,17 +295,72 @@ public final class HealthCheck {
 	}
 
 	/**
-	 * Version strings are wildly inconsistent between mods, so this compares loosely: a match on the
-	 * digits is treated as the same build. Better to miss an update than to invent one.
+	 * True when two version strings name the same build.
+	 *
+	 * <p>The previous test asked whether one string contained the other, and that quietly answers
+	 * "same build" for 1.1.1 against 1.1.10 — the update existed, Mod Menu offered it, and this check
+	 * reported everything fine. Comparing segment by segment as numbers is the only reading that puts
+	 * 9 and 10 the right way round.
 	 */
 	private static boolean looksSameVersion(String installed, String latest) {
-		String a = digitsOf(installed);
-		String b = digitsOf(latest);
-		return a.isEmpty() || b.isEmpty() || b.contains(a) || a.contains(b);
+		int[] a = numericParts(installed);
+		int[] b = numericParts(latest);
+		if (a.length == 0 || b.length == 0) {
+			// Nothing numeric to compare. Better to miss an update than to invent one.
+			return true;
+		}
+		for (int index = 0; index < Math.max(a.length, b.length); index++) {
+			int left = index < a.length ? a[index] : 0;
+			int right = index < b.length ? b[index] : 0;
+			if (left != right) {
+				return false;
+			}
+		}
+		return true;
 	}
 
-	private static String digitsOf(String value) {
-		return value == null ? "" : value.replaceAll("[^0-9.]", "").replaceAll("^\\.+|\\.+$", "");
+	/**
+	 * The numbers in a version string, in order.
+	 *
+	 * <p>Build metadata after {@code +} is dropped: {@code 0.9.1+mc26.1.2} and {@code 0.9.1} are the
+	 * same release, and keeping the Minecraft version in the comparison would make every mod look
+	 * different from itself. Everything else contributes, so {@code 0.4.4-beta2} and
+	 * {@code 0.4.4-beta3} still compare as the different builds they are.
+	 */
+	private static int[] numericParts(String value) {
+		if (value == null) {
+			return new int[0];
+		}
+		String core = value;
+		int plus = core.indexOf('+');
+		if (plus > 0) {
+			core = core.substring(0, plus);
+		}
+
+		List<Integer> parts = new ArrayList<>();
+		int index = 0;
+		while (index < core.length() && parts.size() < 8) {
+			if (!Character.isDigit(core.charAt(index))) {
+				index++;
+				continue;
+			}
+			int end = index;
+			while (end < core.length() && Character.isDigit(core.charAt(end))) {
+				end++;
+			}
+			try {
+				parts.add(Integer.parseInt(core.substring(index, Math.min(end, index + 9))));
+			} catch (NumberFormatException ignored) {
+				// A run of digits too long to be a version component: skip it.
+			}
+			index = end;
+		}
+
+		int[] out = new int[parts.size()];
+		for (int i = 0; i < out.length; i++) {
+			out[i] = parts.get(i);
+		}
+		return out;
 	}
 
 	private static String plainName(String selector) {
