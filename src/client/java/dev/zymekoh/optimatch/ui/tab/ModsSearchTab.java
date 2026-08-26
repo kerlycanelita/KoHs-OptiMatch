@@ -54,6 +54,7 @@ public final class ModsSearchTab implements OptiTab {
 	private int noticeHeight;
 	private int listTop;
 	private int rowHeight;
+	private int detailLines;
 	private int iconSize;
 
 	private int scroll;
@@ -92,7 +93,10 @@ public final class ModsSearchTab implements OptiTab {
 		this.searchBoxHeight = 20;
 		this.noticeHeight = breakpoint.isCompact() ? 20 : 16;
 		this.listTop = y + this.searchBoxHeight + this.noticeHeight + 8;
-		this.rowHeight = breakpoint.pick(30, 34, 38);
+		// Derived from the lines actually drawn: 5 top pad + 10 per line + 5 bottom pad. The old
+		// fixed heights left the downloads line hanging two pixels into the next row.
+		this.detailLines = breakpoint.isCompact() ? 2 : 3;
+		this.rowHeight = 10 + this.detailLines * 10;
 		this.iconSize = breakpoint.pick(20, 24, 28);
 	}
 
@@ -120,21 +124,24 @@ public final class ModsSearchTab implements OptiTab {
 		int textX = this.x + 8;
 		int textY = this.y + (this.searchBoxHeight - 8) / 2;
 
+		// The status counter claims the right end first, and the query is bounded by where it starts.
+		// A fixed reservation of 60px was narrower than "20 resultados", so long queries ran under it.
+		String status = this.loading ? "buscando..." : this.offline ? "sin conexion" : this.results.size() + " resultados";
+		int statusX = this.x + this.width - font.width(status) - 8;
+		graphics.text(font, status, statusX, textY, Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
+
+		int queryWidth = Math.max(20, statusX - textX - 8);
 		if (this.query.isEmpty() && !this.focused) {
-			Draw.clippedText(graphics, font, "Buscar mods en Modrinth...", textX, textY, this.width - 60,
+			Draw.clippedText(graphics, font, "Buscar mods en Modrinth...", textX, textY, queryWidth,
 				Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 		} else {
-			Draw.clippedText(graphics, font, this.query, textX, textY, this.width - 60,
+			Draw.clippedText(graphics, font, this.query, textX, textY, queryWidth,
 				Theme.withAlpha(Theme.TEXT, opacity), false);
 			if (this.focused && (now / 500L) % 2 == 0) {
-				int caretX = textX + Math.min(font.width(this.query), this.width - 62);
+				int caretX = textX + Math.min(font.width(this.query), queryWidth - 2);
 				graphics.fill(caretX + 1, textY - 1, caretX + 2, textY + 9, Theme.withAlpha(Theme.ACCENT_BRIGHT, opacity));
 			}
 		}
-
-		String status = this.loading ? "buscando..." : this.offline ? "sin conexion" : this.results.size() + " resultados";
-		graphics.text(font, status, this.x + this.width - font.width(status) - 8, textY,
-			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 	}
 
 	private void renderNotice(GuiGraphicsExtractor graphics, Font font, float opacity) {
@@ -203,7 +210,7 @@ public final class ModsSearchTab implements OptiTab {
 					Theme.withAlpha(Theme.TEXT, opacity), false);
 				Draw.clippedText(graphics, font, project.description(), textX, cursorY + 15, textWidth,
 					Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
-				if (this.rowHeight >= 34) {
+				if (this.detailLines >= 3) {
 					Draw.clippedText(graphics, font, project.downloadsLabel(), textX, cursorY + 25, textWidth,
 						Theme.withAlpha(Theme.TEXT_DIM, opacity * 0.8F), false);
 				}

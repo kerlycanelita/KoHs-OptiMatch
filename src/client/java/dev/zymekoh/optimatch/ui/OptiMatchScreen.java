@@ -272,20 +272,26 @@ public final class OptiMatchScreen extends Screen {
 		float progress = this.loadingProgress();
 		float fade = progress > 0.7F ? 1.0F - (progress - 0.7F) / 0.3F : 1.0F;
 
-		Spinner.halo(graphics, centerX, centerY - 6, 34, now, fade);
-		Spinner.indeterminate(graphics, centerX, centerY - 6, 30, now, fade);
-		Spinner.progress(graphics, centerX, centerY - 6, 38, progress, fade * 0.9F);
+		// Everything below is placed from the ring's own radius. The title used to sit at a fixed
+		// offset that landed inside the outer ring, so the letters ran through the progress dots.
+		int ringCenterY = centerY - 14;
+		int outerRadius = 38;
 
-		// The mascot paces along the middle of the ring.
-		int walkWidth = 44;
-		Mascot.renderWalking(graphics, centerX - walkWidth / 2, centerY + 6, walkWidth, 1, now, fade);
+		Spinner.halo(graphics, centerX, ringCenterY, 30, now, fade);
+		Spinner.indeterminate(graphics, centerX, ringCenterY, 26, now, fade);
+		Spinner.progress(graphics, centerX, ringCenterY, outerRadius, progress, fade * 0.9F);
 
-		graphics.centeredText(this.font, "KoHs OptiMatch", centerX, centerY + 30,
+		// The mascot paces inside the ring, its feet on the circle's lower third.
+		int walkWidth = 40;
+		Mascot.renderWalking(graphics, centerX - walkWidth / 2, ringCenterY + 12, walkWidth, 1, now, fade);
+
+		int textY = ringCenterY + outerRadius + 10;
+		graphics.centeredText(this.font, "KoHs OptiMatch", centerX, textY,
 			Theme.withAlpha(Theme.ACCENT_BRIGHT, fade));
 
 		// Step text tracks real progress rather than being decorative.
 		int step = Math.min(LOADING_STEPS.length - 1, (int) (progress * LOADING_STEPS.length));
-		graphics.centeredText(this.font, LOADING_STEPS[step], centerX, centerY + 42,
+		graphics.centeredText(this.font, LOADING_STEPS[step], centerX, textY + 13,
 			Theme.withAlpha(Theme.TEXT_MUTED, fade));
 	}
 

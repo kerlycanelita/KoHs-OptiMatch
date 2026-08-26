@@ -109,7 +109,7 @@ public final class InstallDialog implements Dialog {
 		this.buttonRowY = this.y + this.height - this.buttonHeight - 10;
 		this.buttonWidth = Math.min(120, Math.max(70, (this.width - 40) / 3));
 
-		this.docTop = this.y + 78;
+		this.docTop = this.y + 80;
 		this.docBottom = this.buttonRowY - 8;
 
 		// Modrinth-style split: the write-up on the left, the author's links down the right edge.
@@ -185,11 +185,11 @@ public final class InstallDialog implements Dialog {
 		if (this.alreadyInstalled != null) {
 			String note = InstalledCheck.label(this.alreadyInstalled) + " — "
 				+ InstalledCheck.explanation(this.alreadyInstalled);
-			Draw.clippedText(graphics, font, note, this.x + 12, this.y + 62, this.width - 24,
+			Draw.clippedText(graphics, font, note, this.x + 12, this.y + 60, this.width - 24,
 				Theme.withAlpha(Theme.GOOD, opacity), false);
 		}
 
-		Draw.divider(graphics, this.x + 10, this.y + 70, this.width - 20, opacity);
+		Draw.divider(graphics, this.x + 10, this.y + 72, this.width - 20, opacity);
 	}
 
 	private void renderCentered(GuiGraphicsExtractor graphics, Font font, String message, long now, float opacity) {

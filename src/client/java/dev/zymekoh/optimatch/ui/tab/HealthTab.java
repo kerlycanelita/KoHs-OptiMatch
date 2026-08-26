@@ -158,7 +158,8 @@ public final class HealthTab implements OptiTab {
 
 			// Height is measured from the text that will actually be drawn, so cards never overlap.
 			int detailLines = this.breakpoint.isCompact() ? 2 : 3;
-			int cardHeight = 16 + detailLines * 10 + (hasAction ? 12 : 0);
+			// 16 down to the first detail line, 10 per line, then the action plus bottom padding.
+			int cardHeight = 16 + detailLines * 10 + (hasAction ? 12 : 0) + 6;
 
 			if (cursorY + cardHeight >= this.listTop && cursorY <= bottom) {
 				boolean hovered = Draw.inside(mouseX, mouseY, textX, cursorY, maxWidth, cardHeight - 4);

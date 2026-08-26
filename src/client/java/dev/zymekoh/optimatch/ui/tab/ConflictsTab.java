@@ -170,7 +170,8 @@ public final class ConflictsTab implements OptiTab {
 		int cursorY = listTop - this.scroll;
 		for (Conflict conflict : this.conflicts) {
 			boolean duel = conflict.isDuel();
-			int cardHeight = duel ? 42 : 26 + conflict.contenders().size() * 9;
+			// 15 to the first contender line, 9 per line, then the advice line and bottom padding.
+			int cardHeight = duel ? 42 : 15 + conflict.contenders().size() * 9 + 14;
 
 			if (cursorY + cardHeight >= listTop && cursorY <= listBottom) {
 				boolean hovered = Draw.inside(mouseX, mouseY, textX, cursorY, maxWidth, cardHeight - 3);
