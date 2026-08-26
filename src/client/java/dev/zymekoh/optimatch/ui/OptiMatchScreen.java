@@ -195,6 +195,14 @@ public final class OptiMatchScreen extends Screen {
 		int lift = this.liftOffset();
 		int top = this.frameY + lift;
 
+		// While a modal is up, everything behind it is parked far off-canvas for hit testing. It is
+		// still drawn, but nothing under the dialog may believe the cursor is over it: otherwise the
+		// tab keeps highlighting rows and, worse, keeps requesting tooltips that then surface on top
+		// of the dialog belonging to a screen the player is no longer looking at.
+		boolean modal = this.dialog != null;
+		int hoverX = modal ? Integer.MIN_VALUE / 4 : virtualMouseX;
+		int hoverY = modal ? Integer.MIN_VALUE / 4 : virtualMouseY;
+
 		graphics.pose().pushMatrix();
 		graphics.pose().scale(this.ui.factor());
 
@@ -202,7 +210,8 @@ public final class OptiMatchScreen extends Screen {
 			// Particles run at full strength here: they are the backdrop of the loading screen.
 			this.particles.render(graphics, this.ui.width(), this.ui.height(), now, 1.0F);
 			this.drawLoading(graphics, now);
-			Tooltip.renderPending(graphics, this.font, this.ui.width(), this.ui.height(), 1.0F);
+			// The loading sequence has nothing hoverable; clear rather than paint a leftover.
+			Tooltip.clear();
 			graphics.pose().popMatrix();
 			super.extractRenderState(graphics, mouseX, mouseY, deltaTicks);
 			return;
@@ -224,22 +233,25 @@ public final class OptiMatchScreen extends Screen {
 
 		// enableScissor applies the current pose, so virtual coordinates are correct here.
 		graphics.enableScissor(this.frameX, top, this.frameX + this.frameWidth, top + this.frameHeight);
-		this.drawHeader(graphics, virtualMouseX, virtualMouseY - lift, now, progress, top);
+		this.drawHeader(graphics, hoverX, hoverY - lift, now, progress, top);
 
 		// Freshly selected tabs fade and slide in, so switching reads as movement rather than a cut.
 		float tabFade = Anim.easeOut(Anim.progress(this.tabChangedAt, 180L));
 		int tabSlide = Math.round((1.0F - tabFade) * 8.0F);
 		graphics.pose().pushMatrix();
 		graphics.pose().translate(0.0F, tabSlide);
-		this.tabs[this.activeTab].render(graphics, this.font, virtualMouseX, virtualMouseY - lift - tabSlide,
+		this.tabs[this.activeTab].render(graphics, this.font, hoverX, hoverY - lift - tabSlide,
 			now, progress * tabFade);
 		graphics.pose().popMatrix();
 
-		this.drawPendingBar(graphics, virtualMouseX, virtualMouseY - lift, progress, top);
-		this.drawFooter(graphics, virtualMouseX, virtualMouseY - lift, progress, top);
+		this.drawPendingBar(graphics, hoverX, hoverY - lift, progress, top);
+		this.drawFooter(graphics, hoverX, hoverY - lift, progress, top);
 		graphics.disableScissor();
 
 		if (this.dialog != null) {
+			// Drop anything the layer below asked for before the dialog gets its turn, so a stale
+			// request can never outlive the frame it belonged to.
+			Tooltip.clear();
 			this.dialog.render(graphics, this.font, virtualMouseX, virtualMouseY, now, progress);
 		}
 
@@ -490,6 +502,8 @@ public final class OptiMatchScreen extends Screen {
 	private void openDialog(Dialog opened) {
 		this.dialog = opened;
 		this.dialog.layout(this.ui.width(), this.ui.height());
+		// The tooltip the click was made from belongs to the screen we just covered.
+		Tooltip.clear();
 	}
 
 	/**
@@ -502,6 +516,7 @@ public final class OptiMatchScreen extends Screen {
 		}
 		Dialog next = this.dialog.successor();
 		this.dialog = null;
+		Tooltip.clear();
 		// A finished install may have added pending entries, so the bar has to be recomputed.
 		this.init();
 		if (next != null) {
@@ -513,6 +528,7 @@ public final class OptiMatchScreen extends Screen {
 		if (index != this.activeTab) {
 			this.activeTab = index;
 			this.tabChangedAt = Util.getMillis();
+			Tooltip.clear();
 			this.tabs[index].onSelected();
 		}
 	}

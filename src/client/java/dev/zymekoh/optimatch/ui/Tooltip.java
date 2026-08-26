@@ -20,6 +20,8 @@ public final class Tooltip {
 	private static String pendingBody;
 	private static int pendingX;
 	private static int pendingY;
+	/** Frame the request was made on, so one that is never consumed cannot linger. */
+	private static long requestedAt;
 
 	private Tooltip() {
 	}
@@ -30,6 +32,7 @@ public final class Tooltip {
 		pendingBody = body;
 		pendingX = x;
 		pendingY = y;
+		requestedAt = net.minecraft.util.Util.getMillis();
 	}
 
 	/** Convenience for a hover test: only requests when the cursor is inside the rectangle. */
@@ -49,6 +52,12 @@ public final class Tooltip {
 	public static void renderPending(GuiGraphicsExtractor graphics, Font font, int canvasWidth, int canvasHeight,
 									 float opacity) {
 		if (pendingTitle == null || opacity <= 0.05F) {
+			return;
+		}
+		// A request older than a couple of frames means whoever made it stopped drawing. Painting it
+		// would show a hint for something no longer on screen.
+		if (net.minecraft.util.Util.getMillis() - requestedAt > 120L) {
+			clear();
 			return;
 		}
 
