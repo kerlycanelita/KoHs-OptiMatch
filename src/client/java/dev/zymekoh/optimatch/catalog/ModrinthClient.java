@@ -424,10 +424,10 @@ public final class ModrinthClient {
 		if (donations != null) {
 			for (JsonElement element : donations) {
 				JsonObject donation = element.getAsJsonObject();
-				LinkIcons.Kind kind = LinkIcons.Kind.fromDonationId(string(donation, "id"));
+				String donationUrl = string(donation, "url");
+				LinkIcons.Kind kind = LinkIcons.Kind.fromDonation(string(donation, "id"), donationUrl);
 				String platform = string(donation, "platform");
-				addLink(links, ProjectLink.of(kind, platform.isBlank() ? kind.label() : platform,
-					string(donation, "url")));
+				addLink(links, ProjectLink.of(kind, platform.isBlank() ? kind.label() : platform, donationUrl));
 			}
 		}
 		return List.copyOf(links);

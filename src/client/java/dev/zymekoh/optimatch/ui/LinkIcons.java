@@ -39,8 +39,20 @@ public final class LinkIcons {
 			return this.color;
 		}
 
-		/** Maps Modrinth's {@code donation_urls[].id} onto a glyph. */
-		public static Kind fromDonationId(String id) {
+		/**
+		 * Picks the glyph for a donation link.
+		 *
+		 * <p>The destination host wins over the declared {@code id}, because the two genuinely
+		 * disagree in the wild: Sodium files its donate page under {@code ko-fi} while the link
+		 * actually goes to {@code caffeinemc.net}, and plenty of projects file a real Ko-fi or
+		 * Patreon page under {@code other}. The host is what the click will do, so the icon should
+		 * follow the host and only fall back to the id when the host says nothing.
+		 */
+		public static Kind fromDonation(String id, String url) {
+			Kind byHost = fromHost(url);
+			if (byHost != null) {
+				return byHost;
+			}
 			if (id == null) {
 				return OTHER;
 			}
@@ -52,6 +64,44 @@ public final class LinkIcons {
 				case "ko-fi", "kofi" -> KOFI;
 				default -> OTHER;
 			};
+		}
+
+		/** The glyph a URL's host implies, or null when the host is not one we recognise. */
+		public static Kind fromHost(String url) {
+			if (url == null || url.isBlank()) {
+				return null;
+			}
+			String host;
+			try {
+				host = java.net.URI.create(url.strip()).getHost();
+			} catch (Exception exception) {
+				return null;
+			}
+			if (host == null) {
+				return null;
+			}
+			String lower = host.toLowerCase(java.util.Locale.ROOT);
+
+			if (lower.contains("patreon.")) {
+				return PATREON;
+			}
+			if (lower.contains("ko-fi.") || lower.contains("kofi.")) {
+				return KOFI;
+			}
+			if (lower.contains("buymeacoffee.")) {
+				return BUY_ME_A_COFFEE;
+			}
+			if (lower.contains("paypal.")) {
+				return PAYPAL;
+			}
+			if (lower.contains("github.")) {
+				// A github.com link in a donation slot is Sponsors; elsewhere it is source code.
+				return GITHUB_SPONSORS;
+			}
+			if (lower.contains("discord.")) {
+				return DISCORD;
+			}
+			return null;
 		}
 	}
 

@@ -6,6 +6,7 @@ import dev.zymekoh.optimatch.ui.dialog.Dialog;
 import dev.zymekoh.optimatch.ui.dialog.StartupPromptDialog;
 import dev.zymekoh.optimatch.ui.tab.ConflictsTab;
 import dev.zymekoh.optimatch.ui.tab.ForYouTab;
+import dev.zymekoh.optimatch.ui.tab.HealthTab;
 import dev.zymekoh.optimatch.ui.tab.InstalledModsTab;
 import dev.zymekoh.optimatch.ui.tab.ModsSearchTab;
 import dev.zymekoh.optimatch.ui.tab.ProfilesTab;
@@ -85,6 +86,7 @@ public final class OptiMatchScreen extends Screen {
 			new ForYouTab(this::openDialog),
 			new ModsSearchTab(this::openDialog),
 			new ConflictsTab(this::openDialog),
+			new HealthTab(),
 			new ProfilesTab(this::openDialog)
 		};
 	}

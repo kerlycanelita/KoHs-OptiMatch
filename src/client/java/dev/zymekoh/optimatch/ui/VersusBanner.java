@@ -25,22 +25,21 @@ public final class VersusBanner {
 		int centerX = x + width / 2;
 		int centerY = y + height / 2;
 
-		// Angled arena backdrop: two tinted halves leaning into the middle.
+		// Two slate halves meeting at an angle. Muted on purpose: this panel reports a technical
+		// finding, and arcade pinks made it read as a joke rather than as information.
 		int slant = Math.max(6, height / 3);
 		drawSlantedHalf(graphics, x, y, width / 2, height, slant, true,
-			Theme.argb(Math.round(70 * opacity), 0x8B2E4A));
+			Theme.argb(Math.round(58 * opacity), 0x3A3050));
 		drawSlantedHalf(graphics, centerX, y, width / 2, height, slant, false,
-			Theme.argb(Math.round(70 * opacity), 0x2E4A8B));
+			Theme.argb(Math.round(58 * opacity), 0x2A3448));
 
-		// Speed lines rushing toward the clash, which is what sells the motion.
-		for (int i = 0; i < 5; i++) {
-			float phase = Draw.cycle(now + i * 220L, 1500L);
-			int lineY = y + 6 + i * Math.max(3, (height - 12) / 5);
-			int reach = Math.round(phase * (width / 2.0F - 26));
-			int alpha = Math.round((1.0F - phase) * 80 * opacity);
-			graphics.fill(x + 4 + reach, lineY, x + 16 + reach, lineY + 1, Theme.argb(alpha, 0xFFD2E0));
-			graphics.fill(x + width - 16 - reach, lineY, x + width - 4 - reach, lineY + 1,
-				Theme.argb(alpha, 0xD2E0FF));
+		// A single seam down the join, drawn instead of speed lines: quieter, and it points at the
+		// one thing that matters here — the place the two mods meet.
+		int seamAlpha = Math.round(50 * opacity);
+		for (int row = 0; row < height; row++) {
+			float t = row / (float) Math.max(1, height - 1);
+			int seamX = centerX + Math.round((t - 0.5F) * slant);
+			graphics.fill(seamX, y + row, seamX + 1, y + row + 1, Theme.argb(seamAlpha, Theme.ACCENT_RGB));
 		}
 
 		int iconSize = Math.min(30, height - 16);
@@ -118,35 +117,30 @@ public final class VersusBanner {
 			Theme.withAlpha(Theme.TEXT_DIM, opacity), false);
 	}
 
-	/** The VS mark itself: pulsing, slightly rotated by a shear, with an impact flash behind it. */
+	/**
+	 * The VS mark: a steady badge rather than a flashing one.
+	 *
+	 * <p>The pulse is slow and shallow. A conflict report is read, not watched, and a mark that
+	 * throbs pulls the eye away from the text that carries the actual finding.
+	 */
 	private static void drawVersus(GuiGraphicsExtractor graphics, Font font, int centerX, int centerY,
 								   long now, float opacity) {
-		float pulse = Draw.wave(now, 900L);
-		int burst = 12 + Math.round(pulse * 4);
-
-		// Impact star behind the letters.
-		for (int i = 0; i < 8; i++) {
-			double angle = i * Math.PI / 4 + pulse * 0.3;
-			int dx = (int) Math.round(Math.cos(angle) * burst);
-			int dy = (int) Math.round(Math.sin(angle) * burst);
-			graphics.fill(centerX + dx - 1, centerY + dy - 1, centerX + dx + 1, centerY + dy + 1,
-				Theme.argb(Math.round((90 + pulse * 90) * opacity), 0xFFE58A));
-		}
-
-		graphics.pose().pushMatrix();
-		graphics.pose().translate(centerX, centerY);
-		graphics.pose().scale(1.7F + pulse * 0.18F);
-		graphics.pose().translate(-centerX, -centerY);
+		float pulse = Draw.wave(now, 2600L);
 
 		String vs = "VS";
 		int textWidth = font.width(vs);
-		// Drawn twice: a dark offset copy gives the letters a hard edge at this scale.
-		graphics.text(font, vs, centerX - textWidth / 2 + 1, centerY - 3,
-			Theme.argb(Math.round(220 * opacity), 0x2A0A18), false);
-		graphics.text(font, vs, centerX - textWidth / 2, centerY - 4,
-			Theme.argb(Math.round(255 * opacity), 0xFFE58A), false);
+		int badgeWidth = textWidth + 14;
+		int badgeHeight = 18;
+		int badgeX = centerX - badgeWidth / 2;
+		int badgeY = centerY - badgeHeight / 2;
 
-		graphics.pose().popMatrix();
+		Draw.roundedRect(graphics, badgeX, badgeY, badgeWidth, badgeHeight, 3,
+			Theme.argb(Math.round(220 * opacity), 0x140C22));
+		Draw.outline(graphics, badgeX, badgeY, badgeWidth, badgeHeight,
+			Theme.argb(Math.round((120 + pulse * 60) * opacity), Theme.ACCENT_RGB));
+
+		graphics.text(font, vs, centerX - textWidth / 2, centerY - 4,
+			Theme.argb(Math.round(255 * opacity), Theme.brighten(Theme.ACCENT_RGB, 0.55F)), false);
 	}
 
 	/** A rectangle with one slanted edge, so the two halves meet at an angle. */
@@ -170,11 +164,10 @@ public final class VersusBanner {
 
 		int gap = 14;
 		int centerX = x + size + gap / 2;
-		float pulse = Draw.wave(now, 900L);
 		String vs = "VS";
 		int textWidth = font.width(vs);
 		graphics.text(font, vs, centerX - textWidth / 2, y + (size - 8) / 2,
-			Theme.argb(Math.round((190 + pulse * 65) * opacity), 0xFFE58A));
+			Theme.argb(Math.round(210 * opacity), Theme.brighten(Theme.ACCENT_RGB, 0.5F)));
 
 		ModIcons.draw(graphics, font, right.modId(), right.displayName(),
 			x + size + gap, y, size, Theme.ACCENT, opacity);

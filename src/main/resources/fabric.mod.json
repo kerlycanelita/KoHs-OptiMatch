@@ -3,13 +3,14 @@
 	"id": "${mod_id}",
 	"version": "${version}",
 	"name": "${mod_name}",
-	"description": "Selector inteligente de mods: analiza tus mods instalados, tu hardware y las carreras de mixins entre mods, y recomienda combinaciones para FPS, latencia o PvP. No usa ningun mixin propio.",
+	"description": "Empareja mods con tu equipo. Analiza lo que tienes instalado, tu CPU/GPU/RAM y las carreras de mixins entre mods; recomienda combinaciones para FPS, latencia minima o PvP competitivo; y los instala verificando contra Modrinth que exista una version para tu Minecraft. Incluye editor de configuracion y diagnostico de mixins rotos. No registra ningun mixin propio.",
 	"authors": [
 		"KoH"
 	],
 	"contact": {
-		"homepage": "https://modrinth.com/",
-		"sources": "https://github.com/KoH/KoHs-OptiMatch"
+		"homepage": "https://github.com/kerlycanelita/KoHs-OptiMatch",
+		"sources": "https://github.com/kerlycanelita/KoHs-OptiMatch"
+		,"issues": "https://github.com/kerlycanelita/KoHs-OptiMatch/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/kohs_optimatch/icon.png",
