@@ -94,8 +94,8 @@ public final class ConflictDetailDialog implements Dialog {
 		graphics.pose().translate(-(this.x + this.width / 2.0F), -(this.y + this.height / 2.0F));
 
 		int accent = levelColor(this.conflict.level());
-		Draw.panel(graphics, this.x, this.y, this.width, this.height, 8,
-			Theme.withAlpha(Theme.PANEL_RAISED, opacity), Theme.withAlpha(accent, opacity));
+		Draw.window(graphics, this.x, this.y, this.width, this.height, 8,
+			Theme.withAlpha(Theme.PANEL_RAISED, opacity), opacity);
 
 		this.renderHeader(graphics, font, now, opacity);
 		this.renderBody(graphics, font, mouseX, mouseY, opacity);

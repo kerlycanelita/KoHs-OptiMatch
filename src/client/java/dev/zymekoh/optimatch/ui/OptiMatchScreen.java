@@ -228,8 +228,8 @@ public final class OptiMatchScreen extends Screen {
 
 		this.particles.render(graphics, this.ui.width(), this.ui.height(), now, progress);
 
-		Draw.panel(graphics, this.frameX, top, this.frameWidth, this.frameHeight, 9,
-			Theme.withAlpha(Theme.PANEL, progress), Theme.withAlpha(Theme.BORDER, progress));
+		Draw.window(graphics, this.frameX, top, this.frameWidth, this.frameHeight, 9,
+			Theme.withAlpha(Theme.PANEL, progress), progress);
 
 		// enableScissor applies the current pose, so virtual coordinates are correct here.
 		graphics.enableScissor(this.frameX, top, this.frameX + this.frameWidth, top + this.frameHeight);

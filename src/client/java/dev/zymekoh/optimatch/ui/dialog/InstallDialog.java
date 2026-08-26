@@ -124,8 +124,8 @@ public final class InstallDialog implements Dialog {
 		// Dim everything behind the dialog so it reads as modal.
 		graphics.fill(0, 0, 10000, 10000, Theme.argb(Math.round(150 * opacity), 0x05020B));
 
-		Draw.panel(graphics, this.x, this.y, this.width, this.height, 8,
-			Theme.withAlpha(Theme.PANEL_RAISED, opacity), Theme.withAlpha(Theme.ACCENT, opacity));
+		Draw.window(graphics, this.x, this.y, this.width, this.height, 8,
+			Theme.withAlpha(Theme.PANEL_RAISED, opacity), opacity);
 
 		this.renderHeader(graphics, font, opacity);
 

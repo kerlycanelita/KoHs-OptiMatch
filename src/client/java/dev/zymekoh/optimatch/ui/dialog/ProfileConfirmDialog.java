@@ -86,9 +86,8 @@ public final class ProfileConfirmDialog implements Dialog {
 		graphics.pose().translate(-(this.x + this.width / 2.0F), -(this.y + this.height / 2.0F));
 
 		boolean destructive = this.mode == Mode.DELETE_PROFILE;
-		Draw.panel(graphics, this.x, this.y, this.width, this.height, 8,
-			Theme.withAlpha(Theme.PANEL_RAISED, opacity),
-			Theme.withAlpha(destructive ? Theme.DANGER : Theme.ACCENT, opacity));
+		Draw.window(graphics, this.x, this.y, this.width, this.height, 8,
+			Theme.withAlpha(Theme.PANEL_RAISED, opacity), opacity);
 
 		this.renderHeader(graphics, font, destructive, opacity);
 		this.renderList(graphics, font, opacity);

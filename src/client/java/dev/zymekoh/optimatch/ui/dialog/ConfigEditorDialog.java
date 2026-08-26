@@ -92,8 +92,8 @@ public final class ConfigEditorDialog implements Dialog {
 		graphics.pose().scale(scale);
 		graphics.pose().translate(-(this.x + this.width / 2.0F), -(this.y + this.height / 2.0F));
 
-		Draw.panel(graphics, this.x, this.y, this.width, this.height, 8,
-			Theme.withAlpha(Theme.PANEL_RAISED, opacity), Theme.withAlpha(Theme.ACCENT, opacity));
+		Draw.window(graphics, this.x, this.y, this.width, this.height, 8,
+			Theme.withAlpha(Theme.PANEL_RAISED, opacity), opacity);
 
 		this.renderHeader(graphics, font, opacity);
 

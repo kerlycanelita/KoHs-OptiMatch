@@ -24,6 +24,17 @@ public final class Theme {
 	public static final int BORDER = 0xBF7C3FC4;
 	public static final int BORDER_SOFT = 0x804A2670;
 
+	// Window chrome. Desaturated on purpose: a saturated line plus an offset shadow reads as a
+	// carved bevel, which made the frame look like a wooden plank instead of a panel edge.
+	/** The window's outer edge: slate with only a trace of the accent hue. */
+	public static final int FRAME = 0xA8433A5E;
+	/** Single light source, from above: a faint inner highlight along the top edge. */
+	public static final int FRAME_TOP = 0x24FFFFFF;
+	/** The matching inner shade along the bottom, which grounds the panel. */
+	public static final int FRAME_BOTTOM = 0x30000000;
+	/** Soft halo drawn evenly around the frame, replacing the offset drop shadow. */
+	public static final int FRAME_HALO = 0x38000000;
+
 	// Text
 	public static final int TEXT = 0xFFF6EEFF;
 	public static final int TEXT_MUTED = 0xFFC3AAD6;

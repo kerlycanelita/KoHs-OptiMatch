@@ -46,6 +46,36 @@ public final class Draw {
 		panel(g, x, y, width, height, radius, Theme.PANEL, Theme.BORDER_SOFT);
 	}
 
+	/**
+	 * The chrome for a window or dialog: flat, with a single light source from above.
+	 *
+	 * <p>Deliberately not {@link #panel}. That one offsets its shadow down and to the left beneath a
+	 * saturated border, and the pair reads as a carved bevel — a wooden plank rather than a panel
+	 * edge. Here the halo sits evenly around the frame, and the only relief is a one-pixel highlight
+	 * along the top with its matching shade along the bottom, which is what makes a surface look lit
+	 * instead of whittled.
+	 */
+	public static void window(GuiGraphicsExtractor g, int x, int y, int width, int height, int radius,
+							  int fill, float opacity) {
+		if (width <= 0 || height <= 0) {
+			return;
+		}
+
+		// Even halo: no direction, so the frame does not appear to sit on a shelf.
+		roundedRect(g, x - 2, y - 2, width + 4, height + 4, radius + 2,
+			Theme.withAlpha(Theme.FRAME_HALO, opacity * 0.55F));
+		roundedRect(g, x - 1, y - 1, width + 2, height + 2, radius + 1,
+			Theme.withAlpha(Theme.FRAME_HALO, opacity));
+
+		roundedRect(g, x, y, width, height, radius, Theme.withAlpha(Theme.FRAME, opacity));
+		roundedRect(g, x + 1, y + 1, width - 2, height - 2, Math.max(0, radius - 1), fill);
+
+		// The light is stated once, at the top, rather than repeated on every edge.
+		g.fill(x + radius, y + 1, x + width - radius, y + 2, Theme.withAlpha(Theme.FRAME_TOP, opacity));
+		g.fill(x + radius, y + height - 2, x + width - radius, y + height - 1,
+			Theme.withAlpha(Theme.FRAME_BOTTOM, opacity));
+	}
+
 	public static void outline(GuiGraphicsExtractor g, int x, int y, int width, int height, int color) {
 		if (width <= 0 || height <= 0) {
 			return;

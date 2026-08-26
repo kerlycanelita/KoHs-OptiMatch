@@ -55,8 +55,8 @@ public final class StartupPromptDialog implements Dialog {
 		graphics.pose().scale(scale);
 		graphics.pose().translate(-(this.x + this.width / 2.0F), -(this.y + this.height / 2.0F));
 
-		Draw.panel(graphics, this.x, this.y, this.width, this.height, 8,
-			Theme.withAlpha(Theme.PANEL_RAISED, opacity), Theme.withAlpha(Theme.ACCENT, opacity));
+		Draw.window(graphics, this.x, this.y, this.width, this.height, 8,
+			Theme.withAlpha(Theme.PANEL_RAISED, opacity), opacity);
 
 		// The mascot idles beside the question rather than pacing: this is not an error.
 		Mascot.renderIdle(graphics, this.x + 14, this.y + 44, 1, now, opacity);
